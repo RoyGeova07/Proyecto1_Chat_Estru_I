@@ -49,7 +49,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Contraseña</string>
+    <string>Contraseña (6 digitos)</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_4">
@@ -145,16 +145,6 @@
     <rect>
      <x>240</x>
      <y>160</y>
-     <width>191</width>
-     <height>24</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="txtCorreo">
-   <property name="geometry">
-    <rect>
-     <x>240</x>
-     <y>200</y>
      <width>191</width>
      <height>24</height>
     </rect>
@@ -290,6 +280,45 @@
    </property>
    <property name="text">
     <string>REGISTRO</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnLog">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>10</y>
+     <width>80</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&lt;- Regresar</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnGenerarCorreo">
+   <property name="geometry">
+    <rect>
+     <x>450</x>
+     <y>200</y>
+     <width>101</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Generar Correo</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="lblcorreo">
+   <property name="geometry">
+    <rect>
+     <x>240</x>
+     <y>200</y>
+     <width>191</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>GenerarCorreo</string>
    </property>
   </widget>
  </widget>

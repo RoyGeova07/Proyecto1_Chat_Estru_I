@@ -29,6 +29,6 @@ QString Usuario::serializar()const
 {
 
     return usuario+"|"+nombre+"|"+correo+"|"+contrasena+"|"+QString::number(edad)+"|"+pregunta+"|"+respuesta+"|"+
-           rutaAvatar+"|"+(conectado?"online":"offline");
+           rutaAvatar+"|"+(conectado?"1":"0");
 
 }

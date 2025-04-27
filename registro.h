@@ -20,6 +20,9 @@ public slots:
     void ValidarFormulario();
     void CargarImagen();
     void RegistrarUsuario();
+    void VolverLogIn();
+    void GenerarCorreo();
+    void HabilitarGenerarCorreo();
 
 private:
     Ui::Registro *ui;
