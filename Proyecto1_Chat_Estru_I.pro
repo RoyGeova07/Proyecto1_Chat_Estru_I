@@ -10,19 +10,23 @@ CONFIG += c++17
 
 SOURCES += \
     funciones_usuario.cpp \
+    gestioncontactos.cpp \
     inicio.cpp \
     login.cpp \
     main.cpp \
     mainwindow.cpp \
     registro.cpp \
+    solicitudcontacto.cpp \
     usuario.cpp
 
 HEADERS += \
     funciones_usuario.h \
+    gestioncontactos.h \
     inicio.h \
     login.h \
     mainwindow.h \
     registro.h \
+    solicitudcontacto.h \
     usuario.h
 
 FORMS += \
