@@ -20,6 +20,7 @@ public:
     QString getRespuesta()const;
     QString getRutaAvatar()const;
     bool estaConectado()const;
+    void setContrasena(QString nuevacontra){contrasena=nuevacontra;}
 
     void setEstado(bool conectado);
 

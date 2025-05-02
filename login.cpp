@@ -5,6 +5,9 @@
 #include"funciones_usuario.h"
 #include"registro.h"
 #include"inicio.h"
+#include<QList>
+#include<QInputDialog>
+#include"mainwindow.h"
 
 LogIn::LogIn(QWidget *parent)
     : QWidget(parent)
@@ -15,6 +18,7 @@ LogIn::LogIn(QWidget *parent)
     connect(ui->btnLogin,&QPushButton::clicked,this,&LogIn::VerificarCredenciales);
     connect(ui->crear,&QPushButton::clicked,this,&LogIn::AbrirRegistro);
     connect(ui->btnRegresar,&QPushButton::clicked,this,&LogIn::AbrirInicio);
+    connect(ui->recuperar,&QPushButton::clicked,this,&LogIn::RecuperarCuenta);
 
 }
 
@@ -68,5 +72,98 @@ void LogIn::VerificarCredenciales()
 
     }
     QMessageBox::warning(this,"Error","Usuario o contraseña incorrectos");
+
+}
+
+void LogIn::RecuperarCuenta()
+{
+
+    QList<Usuario> usuarios=CargarUsuarios();
+
+    //aqui se hace el primer input, se pide el nombre del usuariooooooo
+    bool ok;
+    QString nombre=QInputDialog::getText(this,"Recuperar cuenta","Ingrese nombre de usuario a recuperar:",QLineEdit::Normal,"",&ok);
+
+    if(!ok||nombre.isEmpty())
+    {
+
+        QMessageBox::warning(this,"Error","Respuesta vacia");
+        return;
+
+    }
+
+    //aqui se busca el usuario
+    for(const Usuario &coca:usuarios)
+    {
+
+        if(coca.getUsuario()==nombre)
+        {
+
+            //aqui el segundo input: se muestra la pregunta acorde como lo guardo el usuario
+            QString pregunta=coca.getPregunta();
+            //se pasa por referencia el bool porque  Qt necesita modificar su valor dentro de la funcion y devolverlo.
+            //si se le pasara por valor (como bool ok), Qt no podria cambiarlo.
+            //Al usar bool &ok, lo que cambia dentro de getText() se refleja directamente fuera, como una salida adicional.
+
+            //si el usuario presiona "Aceptar", ok = true.
+
+            //si el usuario presiona "Cancelar", ok = false.
+
+            QString respuesta=QInputDialog::getText(this,"Pregunta de seguridad",pregunta,QLineEdit::Normal,"",&ok);
+
+            if(!ok||respuesta.isEmpty())
+            {
+
+                QMessageBox::warning(this,"Error","Respuesta vacia");
+                return;
+
+            }
+
+            if(respuesta==coca.getRespuesta())
+            {
+
+                QMessageBox::information(this,"Acceso concedido","Bienvenido "+coca.getUsuario());
+                MainWindow *entrar=new MainWindow(coca);
+                entrar->show();
+                this->close();
+
+                QString nuevacontra;
+                bool cambiobro;
+
+                nuevacontra=QInputDialog::getText(this,"Cambio de contraseña."," QT detecto que entraste por tu pregunta de seguridad para evitar de nuevo este problema cambie su contraseña si lo desea\nIngresa la nueva contraseña:",QLineEdit::Password,"",&cambiobro);
+
+                if(cambiobro&&!nuevacontra.isEmpty())
+                {
+
+                    QList<Usuario> usuarios=CargarUsuarios();
+
+                    for(Usuario &u:usuarios)
+                    {
+
+                        if(u.getUsuario()==coca.getUsuario())
+                        {
+
+                            u.setContrasena(nuevacontra);
+                            break;
+
+                        }
+
+                    }
+                    GuardarUsuarios(usuarios);
+                    QMessageBox::information(this, "Cambio exitoso", "¡Contraseña actualizada correctamente!");
+
+                }
+
+            }else{
+
+                QMessageBox::warning(this,"Error","Respuesta Incorrecta");
+
+            }
+            return;
+
+        }
+
+    }
+    QMessageBox::warning(this,"Error","Usuario no encontrado bro, no mienta");
 
 }

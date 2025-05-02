@@ -8,7 +8,7 @@ class QLabel;
 
 class Inicio : public QWidget
 {
-    Q_OBJECT  // <-- Este macro DEBE estar si quieres señales y slots
+    Q_OBJECT  //aqui <-- este macro DEBE estar si se quiere señales y slots
 
 public:
     explicit Inicio(QWidget *parent = nullptr);

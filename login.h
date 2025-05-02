@@ -16,10 +16,13 @@ public:
     ~LogIn();
 
 private:
+
     void VerificarCredenciales();
     void AbrirRegistro();
     void AbrirInicio();
+    void RecuperarCuenta();
     Ui::LogIn *ui;
+
 };
 
 #endif // LOGIN_H

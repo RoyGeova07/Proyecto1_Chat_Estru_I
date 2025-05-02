@@ -33,22 +33,25 @@ public:
     ~MainWindow()=default;
 
 private slots:
-
-    void enviarSolicitud();
-    void verSolicitudes();
-    void aceptarSolicitud();
-    void rechazarSolicitud();
-    void verContactos();
-    void eliminarContacto();
+    void mostrarPanelBuscar();
+    void mostrarPanelMensajes();
+    void mostrarPanelContactos();
     void cerrarSesion();
 
 private:
-
     Usuario UsuarioActivo;
     GestionContactos gestionContactos;
 
-    QListWidget *listaContactos;
-    QTextEdit *zonaConversacion;
+    QWidget *crearPanelBuscar();
+    QWidget *crearPanelMensajes();
+    QWidget *crearPanelContactos();
+
+    // Elementos principales
+    QStackedWidget *paneles;
+    QPushButton *btnBuscar;
+    QPushButton *btnMensajes;
+    QPushButton *btnContactos;
+    QPushButton *btnCerrarSesion;
 
 };
 #endif // MAINWINDOW_H

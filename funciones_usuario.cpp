@@ -1,7 +1,8 @@
 #include "funciones_usuario.h"
 #include<QFile>
 #include<QTextStream>
-
+#include<QSet>
+#include<QString>
 
 
 QList<Usuario> CargarUsuarios()
@@ -38,3 +39,31 @@ QList<Usuario> CargarUsuarios()
     return lista;
 
 }
+
+void GuardarUsuarios(const QList<Usuario>&usuarios)
+{
+
+    QFile archivo("usuarios.txt");
+
+    if(archivo.open(QIODevice::WriteOnly|QIODevice::Text))
+    {
+
+        QTextStream out(&archivo);
+
+        for(const Usuario &guardar:usuarios)
+        {
+
+
+            out<<guardar.getUsuario() << "|"<<guardar.getNombre()<<"|"<<guardar.getCorreo()<<"|"<<guardar.getContrasena()<<"|"
+            <<guardar.getEdad()<<"|"<<guardar.getPregunta()<<"|"<<guardar.getRespuesta()<<"|"<<guardar.getRutaAvatar()<<"|"
+            <<(guardar.estaConectado()?"1":"0")<<"\n";
+
+        }
+        archivo.close();
+
+    }
+
+}
+
+
+

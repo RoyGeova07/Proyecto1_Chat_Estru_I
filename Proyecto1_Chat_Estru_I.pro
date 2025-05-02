@@ -20,6 +20,7 @@ SOURCES += \
     usuario.cpp
 
 HEADERS += \
+    funciones_conectados.h \
     funciones_usuario.h \
     gestioncontactos.h \
     inicio.h \

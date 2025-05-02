@@ -2,6 +2,12 @@
 #include<QFile>
 #include<QTextStream>
 
+
+//Como se carga la informacion (usuarios, contactos y solicitudes)?
+// en cargar usuarios, se asume que carga todos los usuarios desde un archivo txt
+//lee los archivos y convierte cada linea en nodos enlazados
+//usa listas enlazadas (NodoSolicitud, NodoContacto) para recorrerlos dinamicamente.)
+
 GestionContactos::GestionContactos()
 {
 
