@@ -139,6 +139,15 @@
      <height>24</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
   </widget>
   <widget class="QLineEdit" name="txtNombreCompleto">
    <property name="geometry">
@@ -149,6 +158,12 @@
      <height>24</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
   </widget>
   <widget class="QLineEdit" name="txtContrasena">
    <property name="geometry">
@@ -158,6 +173,12 @@
      <width>191</width>
      <height>24</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="echoMode">
     <enum>QLineEdit::EchoMode::Password</enum>
@@ -172,6 +193,12 @@
      <height>24</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="echoMode">
     <enum>QLineEdit::EchoMode::Password</enum>
    </property>
@@ -184,6 +211,11 @@
      <width>101</width>
      <height>25</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="minimum">
     <number>12</number>
@@ -249,6 +281,12 @@
      <height>24</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
   </widget>
   <widget class="QPushButton" name="btnRegistrar">
    <property name="geometry">
@@ -258,6 +296,12 @@
      <width>191</width>
      <height>24</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+     <bold>true</bold>
+    </font>
    </property>
    <property name="text">
     <string>Registrar</string>
@@ -316,6 +360,12 @@
      <width>191</width>
      <height>16</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+     <bold>false</bold>
+    </font>
    </property>
    <property name="text">
     <string>GenerarCorreo</string>

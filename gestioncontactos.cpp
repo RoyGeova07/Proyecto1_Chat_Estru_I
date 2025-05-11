@@ -1,6 +1,8 @@
 #include "gestioncontactos.h"
 #include<QFile>
 #include<QTextStream>
+#include<QDir>
+#include"funciones_usuario.h"
 
 
 //Como se carga la informacion (usuarios, contactos y solicitudes)?
@@ -31,6 +33,8 @@ bool GestionContactos::EnviarSolicitud(QString remitente, QString destinatario)
     //no se permite eviarse solicitud a uno mismo
     if(remitente==destinatario)return false;
 
+
+
     //aqui se revisa si ya existe  solicitud o ya son contactos
     NodoSolicitud*ActualSolicitud=solicitudes;
     while(ActualSolicitud)
@@ -39,13 +43,21 @@ bool GestionContactos::EnviarSolicitud(QString remitente, QString destinatario)
         if((ActualSolicitud->dato.getRemitente()==remitente&&ActualSolicitud->dato.getDestinaario()==destinatario)||(ActualSolicitud->dato.getRemitente()==destinatario&&ActualSolicitud->dato.getDestinaario()==remitente))
         {
 
-            return false;
+            // si el estado es PENDIENTE o ACEPTADA, no se puede reenviar
+            if(ActualSolicitud->dato.getEstado()=="pendiente"||ActualSolicitud->dato.getEstado()=="aceptada")
+            {
 
+                return false;
+
+            }
+
+            //si ya fue rechazada, se permite crear a una nueva solicitud
         }
         ActualSolicitud=ActualSolicitud->siguiente;
 
     }
 
+    //aqui se verifican si ya son amigos
     NodoContacto*ActualContacto=contactos;
     while (ActualContacto)
     {
@@ -237,6 +249,28 @@ QStringList GestionContactos::ObtenerSolicitudesPendientes(QString usuario) cons
 
 }
 
+QString GestionContactos::ObtenerEstadoSolicitud(QString remitente, QString destinatario) const
+{
+    QString EstadoMasReciente="";
+    NodoSolicitud*actual=solicitudes;
+    while(actual)
+    {
+
+        if(actual->dato.getRemitente()==remitente&&actual->dato.getDestinaario()==destinatario)
+        {
+
+            EstadoMasReciente=actual->dato.getEstado();//aqui guarda la mas reciente
+
+        }
+        actual=actual->siguiente;
+
+    }
+    return EstadoMasReciente;
+
+}
+
+
+
 void GestionContactos::CargarDatos()
 {
 
@@ -244,7 +278,7 @@ void GestionContactos::CargarDatos()
     liberarContactos();
 
     //aqui se cargan las solicitudessszzz
-    QFile ArchivoSoli("solicitudes.txt");
+    QFile ArchivoSoli(RutaSolicitudes());
     if(ArchivoSoli.open(QIODevice::ReadOnly|QIODevice::Text))
     {
 
@@ -286,7 +320,7 @@ void GestionContactos::CargarDatos()
     }
 
     //aqui se cargan los contactos
-    QFile  ArchivoContac("contactos.txt");
+    QFile  ArchivoContac(RutaContactos());
     if(ArchivoContac.open(QIODevice::ReadOnly|QIODevice::Text))
     {
 
@@ -333,7 +367,7 @@ void GestionContactos::GuardarSolicitudes()const
 {
 
     //escribimos en el archivo
-    QFile Archivo("solicitudes.txt");
+    QFile Archivo(RutaSolicitudes());
     if(Archivo.open(QIODevice::WriteOnly|QIODevice::Text))
     {
 
@@ -356,7 +390,7 @@ void GestionContactos::GuardarSolicitudes()const
 void GestionContactos::GuardarContactos()const
 {
 
-    QFile archivo("contactos.txt");
+    QFile archivo(RutaContactos());
     if(archivo.open(QIODevice::WriteOnly|QIODevice::Text))
     {
 

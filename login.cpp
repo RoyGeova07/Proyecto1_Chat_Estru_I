@@ -60,7 +60,8 @@ void LogIn::VerificarCredenciales()
         if(u.getUsuario()==user&&u.getContrasena()==pass)
         {
 
-            QMessageBox::information(this,"Exito",u.getUsuario()+" A iniciado sesion con exito!!");
+            QMessageBox::information(this,"Exito",u.getUsuario()+" A iniciado sesion y activado su cuenta con exito!!");
+            MarcarUsuarioComoConectado(u.getUsuario());
 
             MainWindow *main=new MainWindow(u);
             main->show();

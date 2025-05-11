@@ -67,6 +67,9 @@ public:
 
     QStringList ObtenerContactos(QString usuario)const;
     QStringList ObtenerSolicitudesPendientes(QString usuario)const;
+    QString ObtenerEstadoSolicitud(QString remitente,QString destinatario)const;
+    QString ObtenerEstadoExacto(QString remitente, QString destinatario, int posicion)const;
+    void CargarDatos();
 
 
 private:
@@ -74,7 +77,7 @@ private:
     NodoSolicitud*solicitudes;// cabeza de la lista de solitudes
     NodoContacto*contactos;// cabeza de la lista de contactos
 
-    void CargarDatos();
+
     void GuardarSolicitudes()const;
     void GuardarContactos()const;
 

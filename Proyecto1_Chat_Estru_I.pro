@@ -1,4 +1,5 @@
 QT       += core gui
+QT       += network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -9,23 +10,31 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    colanoleidos.cpp \
     funciones_usuario.cpp \
     gestioncontactos.cpp \
+    gestornotificaciones.cpp \
     inicio.cpp \
     login.cpp \
     main.cpp \
     mainwindow.cpp \
+    notificacion.cpp \
     registro.cpp \
     solicitudcontacto.cpp \
     usuario.cpp
 
 HEADERS += \
-    funciones_conectados.h \
+    EstadoUsuario.h \
+    Mensaje.h \
+    colanoleidos.h \
     funciones_usuario.h \
     gestioncontactos.h \
+    gestornotificaciones.h \
     inicio.h \
     login.h \
     mainwindow.h \
+    notificacion.h \
+    piladeshacer.h \
     registro.h \
     solicitudcontacto.h \
     usuario.h

@@ -18,12 +18,23 @@
 #include<QFile>
 #include<QTextStream>
 #include"funciones_usuario.h"
-#include"funciones_conectados.h"
+#include"gestornotificaciones.h"
+#include<QTimer>
+#include"piladeshacer.h"
+#include<QStringList>
+#include<QRegularExpression>
+#include<QRegularExpressionMatch>
+#include<QCoreApplication>
+#include<QDir>
+#include<QFile>
+#include<QScrollBar>
+#include"Mensaje.h"
+#include<functional>
+
 
 MainWindow::MainWindow(Usuario usuario,QWidget *parent)
     : QMainWindow(parent)
     , UsuarioActivo(usuario)
-
 {
 
     QWidget *central=new QWidget(this);
@@ -53,35 +64,43 @@ MainWindow::MainWindow(Usuario usuario,QWidget *parent)
     //botones para barra lateral
     btnBuscar=new QPushButton(QIcon(":/icons/search.png")," Buscar",this);
     btnMensajes=new QPushButton(QIcon(":/icons/messages.png")," Mensajes",this);
-    btnContactos=new QPushButton(QIcon(":/icons/contactos.png")," Contactos",this);
+    btnHistorial=new QPushButton(QIcon(":/icons/historial.png")," Historial",this);
+    btnNotificaciones=new QPushButton(QIcon(":/icons/notification.png"),"",this);
+    ActualizarContadorNotificaciones();
     btnCerrarSesion=new QPushButton(QIcon(":/icons/cerrar.png")," Cerrar Sesion",this);
 
     QString EstiloBoton="QPushButton {background-color: transparent; color: white;  font-size: 16px; padding: 12px; text-align: left;}"
                             "QPushButton:hover {background-color: #40739e; }";
 
     btnBuscar->setStyleSheet(EstiloBoton);
-    btnContactos->setStyleSheet(EstiloBoton);
+    btnHistorial->setStyleSheet(EstiloBoton);
     btnMensajes->setStyleSheet(EstiloBoton);
+    btnNotificaciones->setStyleSheet(EstiloBoton);
     btnCerrarSesion->setStyleSheet(EstiloBoton);
 
-
-
-    //Aqui se crean los paneles derechooo
+    //Aqui se crean los botones del lado derecho la parte azulita
     layoutLateral->addWidget(lblAvatar);
+    layoutLateral->addSpacing(20);
     layoutLateral->addWidget(lblNombre);
-    layoutLateral->addSpacing(220);
-    layoutLateral->addWidget(btnBuscar);
-    layoutLateral->addWidget(btnContactos);
-    layoutLateral->addWidget(btnMensajes);
     layoutLateral->addStretch();
+    layoutLateral->addSpacing(20);
+    layoutLateral->addWidget(btnBuscar);
+    layoutLateral->addSpacing(20);
+    layoutLateral->addWidget(btnHistorial);
+    layoutLateral->addSpacing(20);
+    layoutLateral->addWidget(btnMensajes);
+    layoutLateral->addSpacing(20);
+    layoutLateral->addWidget(btnNotificaciones);
+    layoutLateral->addSpacing(20);
     layoutLateral->addWidget(btnCerrarSesion);
 
 
     // ======= aqui se crea el panel derecho ======
     paneles=new QStackedWidget(this);
     paneles->addWidget(crearPanelBuscar());//aqui con el indiice 0
-    paneles->addWidget(crearPanelContactos());//aqui con el indice 1
+    paneles->addWidget(crearPanelHistorial());//aqui con el indice 1
     paneles->addWidget(crearPanelMensajes());//aqui con el indice 2
+    paneles->addWidget(crearPanelNotificaciones());//aqui nuevo indice 3
 
     //aqui se crea el layout principal
     QHBoxLayout *layoutPrincipal=new QHBoxLayout(central);
@@ -90,26 +109,48 @@ MainWindow::MainWindow(Usuario usuario,QWidget *parent)
 
     // =======CONEXIONES======
     connect(btnBuscar,&QPushButton::clicked,this,&MainWindow::mostrarPanelBuscar);
-    connect(btnContactos,&QPushButton::clicked,this,&MainWindow::mostrarPanelContactos);
+    connect(btnHistorial,&QPushButton::clicked,this,&MainWindow::mostrarPanelHistorial);
     connect(btnMensajes,&QPushButton::clicked,this,&MainWindow::mostrarPanelMensajes);
+    connect(btnNotificaciones,&QPushButton::clicked,this,&MainWindow::mostrarPanelNotificaciones);
     connect(btnCerrarSesion,&QPushButton::clicked,this,&MainWindow::cerrarSesion);
 
 
     //aqui se mostrara el panel por defecto
     paneles->setCurrentIndex(0);
+
+
+    QTimer *timerContador=new QTimer(this);
+    connect(timerContador,&QTimer::timeout,this,[=]()
+    {
+
+        ActualizarContadorNotificaciones();
+
+    });
+    timerContador->start(3000); // cada 3 segundos
+
 }
 
 // =====AQUI FUNCIONES PARA CAMBIAR DE PANEL=====
 void MainWindow::mostrarPanelBuscar()
 {
 
+    QWidget*viejo=paneles->widget(0);
+    QWidget*nuevo=crearPanelBuscar();
+    paneles->removeWidget(viejo);
+    delete viejo;
+    paneles->insertWidget(0,nuevo);
     paneles->setCurrentIndex(0);
 
 }
 
-void MainWindow::mostrarPanelContactos()
+void MainWindow::mostrarPanelHistorial()
 {
 
+    QWidget*viejo=paneles->widget(1);
+    QWidget*nuevo=crearPanelHistorial();
+    paneles->removeWidget(viejo);
+    delete viejo;
+    paneles->insertWidget(1,nuevo);
     paneles->setCurrentIndex(1);
 
 }
@@ -117,13 +158,31 @@ void MainWindow::mostrarPanelContactos()
 void MainWindow::mostrarPanelMensajes()
 {
 
+    QWidget*viejo=paneles->widget(2);
+    QWidget*nuevo=crearPanelMensajes();
+    paneles->removeWidget(viejo);
+    delete viejo;
+    paneles->insertWidget(2,nuevo);
     paneles->setCurrentIndex(2);
+
+}
+
+void MainWindow::mostrarPanelNotificaciones()
+{
+
+    QWidget*viejo=paneles->widget(3);
+    QWidget*nuevo=crearPanelNotificaciones();
+    paneles->removeWidget(viejo);
+    delete viejo;
+    paneles->insertWidget(3,nuevo);
+    paneles->setCurrentIndex(3);
 
 }
 
 void MainWindow::cerrarSesion()
 {
 
+    MarcarUsuarioComoDesconectado(UsuarioActivo.getUsuario());
     Inicio *i=new Inicio();
     i->show();
     this->close();
@@ -165,6 +224,7 @@ QWidget *MainWindow::crearPanelBuscar()
     //si si, muestra la tarjeta, Si no, la oculta
 
     QList<QWidget*> tarjetasUsuarios;
+    QMap<QString, QPushButton*> mapaBotonesSolicitud;
 
     QList<Usuario> usuarios=CargarUsuarios();
     //aqui ordenamiento burbuja, para ordenar la lista de contacto en orden alfabetico
@@ -181,8 +241,8 @@ QWidget *MainWindow::crearPanelBuscar()
         for(int j=0;j<usuarios.size()-i-1;++j)
         {
 
-            QString nombre1=usuarios[j].getUsuario().toLower();
-            QString nombre2=usuarios[j+1].getUsuario().toLower();
+            QString nombre1=usuarios[j].getNombre().toLower();
+            QString nombre2=usuarios[j+1].getNombre().toLower();
             if(nombre1>nombre2)
             {
 
@@ -196,6 +256,8 @@ QWidget *MainWindow::crearPanelBuscar()
 
     }
 
+    QMap<QString, QLabel*>mapaEstados;// para guardar los estados en un mapa
+
     for(const Usuario&u:usuarios) {
         if(u.getUsuario()==UsuarioActivo.getUsuario()) continue;
 
@@ -203,8 +265,8 @@ QWidget *MainWindow::crearPanelBuscar()
         QWidget *card=new QWidget;
         card->setStyleSheet("background-color: white; border: 1px solid #dcdde1; border-radius: 10px;");
         QHBoxLayout *cardLayout = new QHBoxLayout(card);
-        cardLayout->setContentsMargins(15, 10, 15, 10);
-        cardLayout->setSpacing(15);
+        card->setFixedHeight(85);
+        card->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);// No se colapsa al ocultar
 
         // Avatar
         QLabel *avatar=new QLabel;
@@ -214,28 +276,27 @@ QWidget *MainWindow::crearPanelBuscar()
         avatar->setStyleSheet("border-radius: 30px;");
 
         // Info del usuario
-        QLabel *lblNombre=new QLabel("Nombre de usuario: " + u.getUsuario());
+        QLabel *lblNombre=new QLabel(u.getNombre());
         lblNombre->setObjectName("lblNombreUsuario");
-        lblNombre->setStyleSheet("font-size: 15px; font-weight: bold; color: #2f3640;");
+        lblNombre->setStyleSheet("font-size: 15px; font-weight: bold; color: #2f3640; border: none; background: transparent;");
 
-        QString estadoTexto=EstaConectado(u.getUsuario())?"Online":"Offline";
-        QString colorEstado=EstaConectado(u.getUsuario())?"green":"red";
-        QLabel *estado=new QLabel("Estado: "+estadoTexto);
-        estado->setStyleSheet("color: "+colorEstado+"; font-size: 13px;");
+        bool conectado=Estaconectado(u.getUsuario());
+        QString estadotexto=conectado?"Online":"Offline";
+        QString colorestado=conectado?"green":"red";
+        QLabel *estado=new QLabel(estadotexto);
+        estado->setStyleSheet("color: "+colorestado+"; font-size: 13px; border: none; background: transparent;");
+        mapaEstados[u.getUsuario()]=estado;
 
         QVBoxLayout *infoLayout=new QVBoxLayout;
         infoLayout->addWidget(lblNombre);
         infoLayout->addWidget(estado);
-        infoLayout->setSpacing(4);
+        infoLayout->setSpacing(0);
+        infoLayout->setContentsMargins(0,0,0,0);
 
         //aqui el boton agregar
-        QPushButton *btnSolicitud=new QPushButton("Agregar");
-        btnSolicitud->setStyleSheet(
-
-            "QPushButton { background-color: #3498db; color: white; padding: 8px 16px; font-size: 13px; border-radius: 6px; }"
-            "QPushButton:disabled { background-color: gray; }"
-
-            );
+        QPushButton *btnSolicitud = new QPushButton;
+        btnSolicitud->setStyleSheet("QPushButton { background-color: #3498db; color: white; padding: 8px 16px; font-size: 13px; border-radius: 6px; } QPushButton:disabled { background-color: gray; }");
+        mapaBotonesSolicitud[u.getUsuario()] = btnSolicitud;
 
         if(gestionContactos.ObtenerContactos(UsuarioActivo.getUsuario()).contains(u.getUsuario()))
         {
@@ -248,20 +309,25 @@ QWidget *MainWindow::crearPanelBuscar()
             btnSolicitud->setText("Solicitud enviada");
             btnSolicitud->setEnabled(false);
 
+        }else{
+
+            btnSolicitud->setText("Agregar");
+            btnSolicitud->setEnabled(true);
+
+
         }
-
-        //esta es una funcion lamba
-        //el  [=] → captura por valor
-
-        //aqui todas las variables que estan en el entorno (como UsuarioActivo, u, btnSolicitud) se copian dentro de la lambda.
-
-        //aqui si no usa [=], Qt no sabria de donde sacar el u, ni UsuarioActivo, ni btnSolicitud.
 
         connect(btnSolicitud, &QPushButton::clicked,[=]()
         {
 
             if(gestionContactos.EnviarSolicitud(UsuarioActivo.getUsuario(), u.getUsuario()))
             {
+                //aqui se crea la notificaion'
+                Notificacion noti(u.getUsuario(), UsuarioActivo.getUsuario(), "solicitud", "", "nueva");//aqui el mensaje se construye en el panel
+                GestorNotificaciones gestor;
+                gestor.agregarnotificacion(noti);
+
+                ActualizarContadorNotificaciones();
 
                 btnSolicitud->setText("Solicitud enviada");
                 btnSolicitud->setEnabled(false);
@@ -277,10 +343,13 @@ QWidget *MainWindow::crearPanelBuscar()
 
         layoutUsuarios->addWidget(card);
         tarjetasUsuarios.append(card);
+        contenedorUsuarios->setMinimumHeight(tarjetasUsuarios.size()*85+20);//aqui altura totl
     }
 
     scroll->setWidget(contenedorUsuarios);
     layoutPanel->addWidget(scroll);
+
+
 
     // Filtro funcional
     //que hace este connect?
@@ -319,23 +388,81 @@ QWidget *MainWindow::crearPanelBuscar()
             }
         }
 
-        //En resumen
+    });
 
-        //connect(..., textChanged, ...)	Ejecuta una funciion cada vez que cambia el texto del campo de busqueda.
+    QTimer *timer=new QTimer(panel);
+    connect(timer,&QTimer::timeout,panel,[=](){
 
-        //findChild("lblNombreUsuario")	Busca dentro de cada tarjeta el QLabel con el nombre del usuario
+        for(auto messi=mapaEstados.begin();messi!=mapaEstados.end();++messi)
+        {
 
-        //.remove("Nombre de usuario: ")	Limpia el texto para quedarte solo con el nombre
+            QString usuario=messi.key();
+            QLabel *estadoLabel=messi.value();
+            bool conectado=Estaconectado(usuario);
+            estadoLabel->setText(QString(conectado ? "Online" : "Offline"));
+            estadoLabel->setStyleSheet("color: " + QString(conectado ? "green" : "red") + "; font-size: 13px; border: none; background: transparent;");
+        }
+    });
+    timer->start(3000); // Actualiza cada 3 segundos
 
-        //contains(texto.toLower())	Compara si el nombre incluye lo que escribiste (ignorando mayusculas).
+    //aqui actualizacion de botones de solicitud cada 3 segundos
+    QTimer *timerBotones=new QTimer(panel);
+    connect(timerBotones, &QTimer::timeout, panel, [=]() {
+        gestionContactos.CargarDatos(); // para que se actualicen solicitudes y contactos
+        for (const Usuario &u : usuarios)
+        {
+            if(!mapaBotonesSolicitud.contains(u.getUsuario())) continue;
 
-        //card->setVisible(...)	Muestra u oculta la tarjeta segun si coincide con lo buscado.
+            QPushButton *btn=mapaBotonesSolicitud[u.getUsuario()];
+            if(!btn)continue;
+
+            if(gestionContactos.ObtenerContactos(UsuarioActivo.getUsuario()).contains(u.getUsuario()))
+            {
+
+                btn->setText("Amigos");
+                btn->setEnabled(false);
+
+            }else if(gestionContactos.ObtenerSolicitudesPendientes(u.getUsuario()).contains(UsuarioActivo.getUsuario())){
+
+                btn->setText("Solicitud enviada");
+                btn->setEnabled(false);
+
+            }else{
+
+                btn->setText("Agregar");
+                btn->setEnabled(true);
+
+            }
+        }
+    });
+    timerBotones->start(3000);
+
+    int cantidadUsuariosINicial=usuarios.size();
+
+    QTimer *timerUsuariosNuevos=new QTimer(panel);
+    connect(timerUsuariosNuevos,&QTimer::timeout,this,[=](){
+
+        QList<Usuario> listaActualizada = CargarUsuarios();
+        if(listaActualizada.size()!=cantidadUsuariosINicial)
+        {
+
+            //aqui reconstruir todo el panel si se detecta un nuevo usuario
+            QWidget *nuevo=crearPanelBuscar();
+            int indice=paneles->indexOf(panel);
+            paneles->removeWidget(panel);
+            panel->deleteLater();
+            paneles->insertWidget(indice, nuevo);
+            paneles->setCurrentIndex(indice);
+
+        }
 
     });
+    timerUsuariosNuevos->start(3000); // cada 3 segundos revisa si hay nuevos usuarios
 
     return panel;
 }
-QWidget *MainWindow::crearPanelContactos()
+
+QWidget *MainWindow::crearPanelHistorial()
 {
 
     QWidget *panel=new QWidget();
@@ -348,11 +475,535 @@ QWidget *MainWindow::crearPanelMensajes()
 {
 
     QWidget *panel=new QWidget();
-    panel->setStyleSheet("background-color: white");
-    return panel;
+    panel->setStyleSheet("background-color: #ecf0f1;");
+    QHBoxLayout*mainlayout=new QHBoxLayout(panel);
 
+    //aqui lista izquierda de contactos
+    QListWidget*listacontactos=new QListWidget;
+    listacontactos->setFixedWidth(250);
+    listacontactos->setStyleSheet("background-color: white; font-size: 14px; border-right: 1px solid #dcdde1;");
+    mainlayout->addWidget(listacontactos);
+
+    //aqui panel derecho para el chat
+    QWidget*panelchat=new QWidget;
+    panelchat->setStyleSheet("background-color: white;");
+    QVBoxLayout*chatlayout=new QVBoxLayout(panelchat);
+    QLabel*posicion=new QLabel("Selecciona un contacto para comenzar a chatear");
+    posicion->setStyleSheet("font-size: 16px; color: #7f8c8d;");
+    chatlayout->addWidget(posicion);
+    mainlayout->addWidget(panelchat);
+
+    //aqui se obtienen todos los usuarios y amigos
+    QList<Usuario>usuarios=CargarUsuarios();
+    QStringList amigos=gestionContactos.ObtenerContactos(UsuarioActivo.getUsuario());
+
+    //aqui se mostraran cada amigo con su avatar y nombre completo
+    QMap<QString, QLabel*> mapaPuntosEstado; // Para actualizar los puntos en tiempo real
+
+    for(const QString &amigoUsuario:amigos)
+    {
+
+        for(const Usuario &u:usuarios)
+        {
+
+            if(u.getUsuario()==amigoUsuario)
+            {
+
+                //aqui widget personalizado
+                QWidget*itemWidget=new QWidget;
+                itemWidget->setStyleSheet(
+                    "background-color: #f9f9f9;"
+                    "border: 1px solid #dcdde1;"
+                    "border-radius: 6px;"
+                    );
+
+
+                QHBoxLayout*layout=new QHBoxLayout(itemWidget);
+                layout->setContentsMargins(10,5,10,5);
+
+                //aqui avatar
+                QLabel *avatarLabel=new QLabel;
+                QPixmap avatar(u.getRutaAvatar());
+                avatarLabel->setPixmap(avatar.scaled(40,40,Qt::KeepAspectRatio,Qt::SmoothTransformation));
+                avatarLabel->setFixedSize(40,40);
+
+                QLabel *puntoEstado=new QLabel;
+                puntoEstado->setFixedSize(12,12);
+                puntoEstado->setStyleSheet("border-radius: 6px;");
+                bool conectado=Estaconectado(u.getUsuario());
+                puntoEstado->setStyleSheet("background-color: " + QString(conectado ? "green" : "red") + "; border-radius: 6px;");
+
+                //aqui nombre completo
+                QLabel *nombreLabel=new QLabel(u.getNombre());
+                nombreLabel->setStyleSheet("font-size: 14px; color: #2c3e50; font-weight: bold;");
+
+                // layout horizontal para punto + nombre
+                QHBoxLayout *nombreLayout = new QHBoxLayout;
+                nombreLayout->setContentsMargins(0,0,0,0);
+                nombreLayout->setSpacing(6); // espacio entre punto y texto
+                nombreLayout->addWidget(puntoEstado);
+                nombreLayout->addWidget(nombreLabel);
+
+                QWidget *nombreWidget = new QWidget;
+                nombreWidget->setLayout(nombreLayout);
+
+                layout->addWidget(avatarLabel);
+                layout->addWidget(nombreWidget); // agregas el widget con el nombre y el punto
+                layout->addStretch();
+
+                //aqui se crea el item
+                QListWidgetItem*item=new QListWidgetItem;
+                item->setSizeHint(QSize(0,60));  //aqui mayor altura para mejor visibilidad
+                item->setData(Qt::UserRole,u.getUsuario()); //aqui guarda el usuario como identificador
+
+                listacontactos->addItem(item);
+                listacontactos->setItemWidget(item, itemWidget);
+
+                mapaPuntosEstado[u.getUsuario()]=puntoEstado;
+
+                break;
+
+            }
+
+        }
+
+    }
+
+    //aqui crea pila para deshacer mensajes enviados
+    static PilaDeshacer<Mensaje<QString>> pilaDeshacer;
+    QTimer *TimerMensajes=new QTimer(panel);//aqui se crea una sola vez
+    TimerMensajes->start(3000);
+
+    //aqui la conexion al hacer click sobre un contacto
+    connect(listacontactos,&QListWidget::itemClicked,[=](QListWidgetItem*item)
+    {
+
+        QString usuamigo=item->data(Qt::UserRole).toString();
+
+        //aqui se busca nombre completoo del amigo
+        QString nombrecompleto;
+        for(const Usuario &u:usuarios)
+        {
+
+            if(u.getUsuario()==usuamigo)
+            {
+
+                nombrecompleto=u.getNombre();
+                break;
+
+            }
+
+        }
+        //aqui se limpia la vista anterior
+        QLayoutItem *w;
+        while((w=chatlayout->takeAt(0))!=nullptr)
+        {
+
+            if(w->widget())delete w->widget();
+            delete w;
+
+        }
+
+        //aqui cabecera de chat
+        QLabel *cabecera=new QLabel("Chat con: "+nombrecompleto);
+        cabecera->setStyleSheet("font-weight: bold; font-size: 18px;");
+        chatlayout->addWidget(cabecera);
+
+        //aqui fecha de inicio de la conversacion
+        QString fecha=QDate::currentDate().toString("dddd dd MMMM yyyy");
+        QLabel*fechaInicio=new QLabel(fecha);
+        fechaInicio->setStyleSheet("color: gray; font-size: 12px; margin-bottom: 10px;");
+        chatlayout->addWidget(fechaInicio);
+
+        //aqui area scroll de mensajes
+        QScrollArea *scrollArea = new QScrollArea;
+        QWidget *contenedorMensajes = new QWidget;
+        QVBoxLayout *layoutMensajes = new QVBoxLayout(contenedorMensajes);
+        scrollArea->setWidgetResizable(true);
+        scrollArea->setWidget(contenedorMensajes);
+        chatlayout->addWidget(scrollArea);
+
+        QLineEdit *entradaMensaje = new QLineEdit;
+        entradaMensaje->setPlaceholderText("Escribe un mensaje...");
+        entradaMensaje->setStyleSheet("color: black; font-size: 14px; padding: 6px;");
+
+        QPushButton *btnEnviar = new QPushButton("Enviar");
+        btnEnviar->setStyleSheet("background-color: #3498db; color: white; font-weight: bold; padding: 6px 12px; border-radius: 6px;");
+
+        QPushButton *btnSticker = new QPushButton("Stickers");
+        btnSticker->setStyleSheet("background-color: #2ecc71; color: white; font-weight: bold; padding: 6px 12px; border-radius: 6px;");
+
+        QPushButton *btnDeshacer = new QPushButton("Deshacer ultimo mensaje");
+        btnDeshacer->setStyleSheet("background-color: #e74c3c; color: white; font-weight: bold; padding: 6px 12px; border-radius: 6px;");
+
+        QPushButton *btnRestaurar = new QPushButton("Restaurar ultimo mensaje");
+        btnRestaurar->setStyleSheet("background-color: #27ae60; color: white; font-weight: bold; padding: 6px 12px; border-radius: 6px;");
+
+
+        QHBoxLayout *botonesLayout = new QHBoxLayout;
+        botonesLayout->addWidget(btnEnviar);
+        botonesLayout->addWidget(btnSticker);
+        botonesLayout->addWidget(btnDeshacer);
+        botonesLayout->addWidget(btnRestaurar);
+
+        chatlayout->addWidget(entradaMensaje);
+        chatlayout->addLayout(botonesLayout);
+
+
+        //=============== AQUI EL PROBLEMAAAAA =====================
+
+        std::function<void()> actualizarMensajes;
+
+        actualizarMensajes = [=]() mutable
+        {
+            QVector<InfoMensaje> botonesPendientes;
+            layoutMensajes->setAlignment(Qt::AlignTop);
+            QLayoutItem *child;
+            while((child = layoutMensajes->takeAt(0))!=nullptr)
+            {
+
+                if(child->widget()) child->widget()->deleteLater();
+                delete child;
+
+            }
+
+
+            QStringList mensajes = CargarMensajeDesdeArchivo(UsuarioActivo.getUsuario(), usuamigo);
+            QString fechaAnterior;
+
+            for (const QString &linea : mensajes) {
+                QRegularExpression re(R"(\[(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})\] ([^ ]+) \(([^)]+)\): (.+))");
+                QRegularExpressionMatch match=re.match(linea);
+
+                if (match.hasMatch()) {
+                    QString fecha = match.captured(1);
+                    QString hora = match.captured(2);
+                    QString emisor = match.captured(3);
+                    QString tipo = match.captured(4);
+                    QString contenido = match.captured(5);
+
+                    if (fecha != fechaAnterior)
+                    {
+
+                        QLabel *fechaLabel = new QLabel(QDate::fromString(fecha, "yyyy-MM-dd").toString("dd MMMM yyyy"));
+                        fechaLabel->setAlignment(Qt::AlignCenter);
+                        fechaLabel->setStyleSheet("color: gray; font-size: 12px; margin: 10px;");
+                        layoutMensajes->addWidget(fechaLabel);
+                        fechaAnterior = fecha;
+
+                    }
+
+                    QLabel *msg = new QLabel(contenido + "\n" + hora);
+                    msg->setStyleSheet("padding: 6px; border-radius: 10px; font-size: 13px;");
+                    QHBoxLayout *lineaLayout = new QHBoxLayout;
+
+                    if (emisor == UsuarioActivo.getUsuario()) {
+                        msg->setStyleSheet(msg->styleSheet() + "background-color: #d1f0d1;");
+                        msg->setAlignment(Qt::AlignRight);
+                        lineaLayout->addStretch();
+                        lineaLayout->addWidget(msg);
+
+                        botonesPendientes.append({fecha, hora, emisor, tipo, contenido});
+                    } else {
+                        msg->setStyleSheet(msg->styleSheet() + "background-color: #e1e1e1;");
+                        msg->setAlignment(Qt::AlignLeft);
+                        lineaLayout->addWidget(msg);
+                        lineaLayout->addStretch();
+                    }
+
+                    QWidget *lineaWidget = new QWidget;
+                    lineaWidget->setLayout(lineaLayout);
+                    layoutMensajes->addWidget(lineaWidget);
+                }
+            }
+
+            scrollArea->verticalScrollBar()->setValue(scrollArea->verticalScrollBar()->maximum());
+
+        };
+
+        // Al presionar enviar
+        //aaqui asi capturara todo por copia excepto pila, que se captura por referencia, permitiendose modificarla.
+        connect(btnEnviar, &QPushButton::clicked, this, [=,&pilaDeshacer]() {
+            QString texto = entradaMensaje->text().trimmed();
+            if (texto.isEmpty()) return;
+
+            Mensaje<QString> m(UsuarioActivo.getUsuario(), usuamigo, texto, Mensaje<QString>::TEXTO, QDateTime::currentDateTime());
+            GuardarMensajeEnArchivo(m, UsuarioActivo.getUsuario(), usuamigo);
+
+            //AQUI APLICANDO PILAS
+            pilaDeshacer.insertar(m);
+            entradaMensaje->clear();
+            actualizarMensajes();
+        });
+
+        actualizarMensajes();//aqui inicial
+        disconnect(TimerMensajes,nullptr,nullptr,nullptr);//aqui limpia conexiones anteriores
+        connect(TimerMensajes,&QTimer::timeout,this,actualizarMensajes);
+
+    });
+
+    int contactosInicial=amigos.size();
+
+    QTimer *timerContactos=new QTimer(panel);
+    connect(timerContactos,&QTimer::timeout,this,[=]()
+    {
+
+
+        QStringList contactosActuales=gestionContactos.ObtenerContactos(UsuarioActivo.getUsuario());
+        if(contactosActuales.size()!=contactosInicial)
+        {
+
+            QWidget *nuevo=crearPanelMensajes();
+            int index=paneles->indexOf(panel);
+            paneles->removeWidget(panel);
+            panel->deleteLater();
+            paneles->insertWidget(index, nuevo);
+            paneles->setCurrentIndex(index);
+
+        }
+
+    });
+    timerContactos->start(3000); // cada 3 segundos revisa
+
+    QTimer *timerEstado=new QTimer(panel);
+    connect(timerEstado,&QTimer::timeout,this,[=]() {
+        for (auto it=mapaPuntosEstado.begin();it!=mapaPuntosEstado.end();++it)
+        {
+
+            QString usuario=it.key();
+            QLabel *punto=it.value();
+            bool conectado=Estaconectado(usuario);
+            punto->setStyleSheet("background-color: " + QString(conectado ? "green" : "red") + "; border-radius: 6px;");
+
+        }
+    });
+    timerEstado->start(3000); // cada 3 segundos actualiza el color del punto
+
+    return panel;
 }
 
+QWidget *MainWindow::crearPanelNotificaciones()
+{
+
+    QWidget *panel=new QWidget;
+    panel->setObjectName("panelbuscar");
+    panel->setStyleSheet("background-color: #ecf0f1;");
+    QVBoxLayout *layoutPanel=new QVBoxLayout(panel);
+    layoutPanel->setContentsMargins(20,20,20,20);
+    layoutPanel->setSpacing(15);
+
+    QLabel *titulo=new QLabel("Buzon de notificaciones - "+UsuarioActivo.getCorreo());
+    titulo->setStyleSheet("font-size: 22px; font-weight: bold; color: #2f3640;");
+    layoutPanel->addWidget(titulo);
+
+    // Scroll para que pueda ver varias notificaciones
+    QScrollArea *scroll=new QScrollArea;
+    scroll->setWidgetResizable(true);
+    QWidget *contenedor=new QWidget;
+    QVBoxLayout *layoutNotis=new QVBoxLayout(contenedor);
+    contenedor->setStyleSheet("background-color: transparent;");
+
+    //aqui se carga las notificaciones
+    GestorNotificaciones gestor;
+    // Solo marcamos las tipo "respuesta" como vistas al abrir el panel
+    QList<Notificacion> notis = gestor.cargar(UsuarioActivo.getUsuario());
+
+    //aqui esta linea es clave para que aparezca bien las solicitudes cuando tenga las 2 pantallas activas
+    gestionContactos.CargarDatos();
+
+    for (int i=0; i<notis.size();++i) {
+        const Notificacion &n=notis[i];
+
+        QWidget *card=new QWidget;
+        card->setStyleSheet("background-color: white; border: 1px solid #dcdde1; border-radius: 10px;");
+        QVBoxLayout *layout=new QVBoxLayout(card);
+        layout->setContentsMargins(15,10,15,10);
+
+        QLabel *titulo=new QLabel;
+        QLabel *mensaje=new QLabel;
+        titulo->setStyleSheet("font-size: 16px; font-weight: bold; color: #192a56;");
+        mensaje->setStyleSheet("font-size: 14px; color: #353b48;");
+
+        if(n.getTipo()=="solicitud")
+        {
+
+            titulo->setText("🔔 Solicitud de amistad");
+
+            //aqui estado exacto de esta solicitud
+            QString estado=n.getRelacionado();//aqui, es quien eenvio solicitud
+            QString EstadoReal=gestionContactos.ObtenerEstadoSolicitud(estado,UsuarioActivo.getUsuario());
+
+            if(EstadoReal=="aceptada")
+            {
+
+                mensaje->setText("✅ Solicitud aceptada.");
+
+            }else if(EstadoReal=="rechazada"){
+
+                mensaje->setText("❌ Solicitud rechazada.");
+
+            }else{
+
+                mensaje->setText(estado + " te ha enviado una solicitud de amistad.");
+
+            }
+
+            layout->addWidget(titulo);
+            layout->addWidget(mensaje);
+
+            if(EstadoReal=="pendiente"){
+                // Solo si está pendiente mostramos los botones
+                QHBoxLayout *botonera=new QHBoxLayout;
+                QPushButton *btnAceptar=new QPushButton("Aceptar");
+                QPushButton *btnRechazar=new QPushButton("Rechazar");
+
+                btnAceptar->setStyleSheet("background-color: #27ae60; color: white; padding: 5px 12px; border-radius: 5px;");
+                btnRechazar->setStyleSheet("background-color: #e74c3c; color: white; padding: 5px 12px; border-radius: 5px;");
+
+                botonera->addWidget(btnAceptar);
+                botonera->addWidget(btnRechazar);
+                layout->addLayout(botonera);
+
+                connect(btnAceptar, &QPushButton::clicked,this,[=]() mutable {
+                    gestionContactos.AceptarSolicitud(n.getRelacionado(), UsuarioActivo.getUsuario());
+                    CrearCarpetaConversacion(UsuarioActivo.getUsuario(),n.getRelacionado());
+
+                    Notificacion respuesta(n.getRelacionado(), UsuarioActivo.getUsuario(), "respuesta", UsuarioActivo.getUsuario() + " aceptó tu solicitud.","nueva");
+                    GestorNotificaciones().agregarnotificacion(respuesta);
+                    GestorNotificaciones().MarcarComoVista(UsuarioActivo.getUsuario(), i);
+
+                    ActualizarContadorNotificaciones();//esto actualiza el contador a 0 si ya no hay nuevas
+
+                    mensaje->setText("✅ Solicitud aceptada.");
+                    btnAceptar->hide();
+                    btnRechazar->hide();
+
+                    QWidget *viejopanel=this->findChild<QWidget*>("panelBuscar");
+                    if(viejopanel)
+                    {
+
+                        int indice=paneles->indexOf(viejopanel);
+                        if(indice!=-1)
+                        {
+
+                            QWidget*nuevo=crearPanelBuscar();
+                            paneles->removeWidget(viejopanel);
+                            delete viejopanel;
+                            paneles->insertWidget(indice, nuevo);
+                            if (paneles->currentIndex()==indice)
+                            {
+
+                                paneles->setCurrentIndex(indice);
+
+                            }
+
+                        }
+                    }
+                });
+
+                connect(btnRechazar, &QPushButton::clicked,this,[=]()mutable
+                {
+
+                    if(gestionContactos.RechazarSolicitud(n.getRelacionado(), UsuarioActivo.getUsuario()))
+                    {
+
+                        Notificacion respuesta(n.getRelacionado(), UsuarioActivo.getUsuario(), "respuesta", UsuarioActivo.getUsuario() + " rechazó tu solicitud.","nueva");
+                        GestorNotificaciones().agregarnotificacion(respuesta);
+                        GestorNotificaciones().MarcarComoVista(UsuarioActivo.getUsuario(), i);
+
+                        ActualizarContadorNotificaciones();
+
+                        mensaje->setText("❌ Solicitud rechazada.");
+                        btnAceptar->hide();
+                        btnRechazar->hide();
+
+                    }
+
+                });
+            }
+
+        }else if(n.getTipo()=="respuesta"){
+
+            titulo->setText("📩 Notificacion de solicitud");
+            mensaje->setText(n.getMensaje());
+
+            layout->addWidget(titulo);
+            layout->addWidget(mensaje);
+
+        }
+
+        layoutNotis->addWidget(card);
+    }
+
+    scroll->setWidget(contenedor);
+    layoutPanel->addWidget(scroll);
+
+    QList<Notificacion> actualizadas = notis;
+    bool huboCambios = false;
+    for (int i = 0; i < actualizadas.size(); ++i) {
+        if (actualizadas[i].getTipo() == "respuesta" && actualizadas[i].getEstado().trimmed() == "nueva") {
+            actualizadas[i].setEstado("vista");
+            huboCambios = true;
+        }
+    }
+    if (huboCambios) {
+        gestor.guardar(UsuarioActivo.getUsuario(), actualizadas);
+    }
+
+    ActualizarContadorNotificaciones();
+
+    //actualizacion con qtimer para que cuando se envia una notificacion se vea en tiempo real
+    QTimer *timerNoti=new QTimer(panel);
+    connect(timerNoti,&QTimer::timeout,this,[=](){
+
+        if(paneles->currentWidget()==panel)
+        {
+
+            QWidget *nuevo=crearPanelNotificaciones();
+            int index=paneles->indexOf(panel);
+            paneles->removeWidget(panel);
+            panel->deleteLater(); // eliminamos el anterior
+            paneles->insertWidget(index, nuevo);
+            paneles->setCurrentIndex(index);
+
+        }
+
+    });
+    timerNoti->start(3000);//3 segunditossss
 
 
+    //aqui se actualiza el contador despues de marcarlas
+    ActualizarContadorNotificaciones();
 
+    return panel;
+}
+
+void MainWindow::ActualizarContadorNotificaciones()
+{
+
+    GestorNotificaciones gestor;
+    QList<Notificacion>notis=gestor.cargar(UsuarioActivo.getUsuario());
+    int pendiente=0;
+    for(const Notificacion &n:notis)
+    {
+
+        if((n.getTipo()=="solicitud"||n.getTipo()=="respuesta")&& n.getEstado().trimmed()=="nueva")
+        {
+
+            pendiente++;
+
+        }
+
+    }
+    if(pendiente>0)
+    {
+
+        btnNotificaciones->setText("Buzon ("+QString::number(pendiente)+")");
+
+    }else{
+
+        btnNotificaciones->setText("Buzon");
+
+    }
+
+}

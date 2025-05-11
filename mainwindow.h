@@ -12,6 +12,11 @@
 #include<QTextEdit>
 #include"usuario.h"
 #include"gestioncontactos.h"
+#include<QVector>
+#include<functional>
+#include<QString>
+#include"piladeshacer.h"
+#include"Mensaje.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -32,11 +37,24 @@ public:
     MainWindow(Usuario usuario,QWidget *parent=nullptr);
     ~MainWindow()=default;
 
+    //aqui se crea  una lista para guardar datos de botones fuera de actualizarMensajes
+    struct InfoMensaje
+    {
+
+        QString fecha,hora,emisor,tipo,contenido;
+
+    };
+
+    void CrearBotonesAccionMensajes(QVBoxLayout *layoutMensajes,const QVector<InfoMensaje> &mensajes,const QString &usuamigo,std::function<void()> actualizarMensajes,PilaDeshacer<Mensaje<QString>>&pilaDeshacer);
+
+
 private slots:
     void mostrarPanelBuscar();
     void mostrarPanelMensajes();
-    void mostrarPanelContactos();
+    void mostrarPanelHistorial();
+    void mostrarPanelNotificaciones();
     void cerrarSesion();
+    void ActualizarContadorNotificaciones();
 
 private:
     Usuario UsuarioActivo;
@@ -44,13 +62,15 @@ private:
 
     QWidget *crearPanelBuscar();
     QWidget *crearPanelMensajes();
-    QWidget *crearPanelContactos();
+    QWidget *crearPanelHistorial();
+    QWidget *crearPanelNotificaciones();
 
     // Elementos principales
     QStackedWidget *paneles;
     QPushButton *btnBuscar;
     QPushButton *btnMensajes;
-    QPushButton *btnContactos;
+    QPushButton *btnHistorial;
+    QPushButton *btnNotificaciones;
     QPushButton *btnCerrarSesion;
 
 };

@@ -62,7 +62,6 @@ void Registro::ValidarFormulario()
     QString confirmar=ui->txtConfirmar->text();
     int edad=ui->spnEdad->value();
     QString respuesta=ui->txtRespuesta->text().trimmed();
-
     //aqui cargo los usuarios
     QList<Usuario> usuarios=CargarUsuarios();
     bool UsuarioUnico=true;
@@ -180,7 +179,7 @@ void Registro::ValidarFormulario()
         ui->txtRespuesta->setToolTip("La respuesta de seguridad no puede estar vacia.");
         ui->txtRespuesta->setStyleSheet("background-color: lightcoral;");
 
-    } else {
+    }else{
 
         ui->txtRespuesta->setToolTip("");
         ui->txtRespuesta->setStyleSheet("background-color: lightgreen;");
@@ -285,13 +284,15 @@ void Registro::RegistrarUsuario()
         true  // Al registrarse, el usuario se considera conectado
         );
 
-    QFile archivo("usuarios.txt");
+    QFile archivo(ObtenerRutaUsuarios());
     if(archivo.open(QIODevice::Append|QIODevice::Text))
     {
 
         QTextStream out(&archivo);
         out<<nuevo.serializar() << "\n";  //aqui usamos la funcion de la clase Usuario
         archivo.close();
+
+        MarcarUsuarioComoConectado(nuevo.getUsuario());
 
         QMessageBox::information(this,"Exito","Usuario "+ui->txtUsuario->text()+ " registrado correctamente.");
 
@@ -300,9 +301,7 @@ void Registro::RegistrarUsuario()
 
         this->close();
 
-    }
-    else
-    {
+    }else{
 
         QMessageBox::critical(this,"Error","No se pudo guardar el usuario.");
 
