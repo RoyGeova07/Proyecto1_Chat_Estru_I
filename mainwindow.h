@@ -17,6 +17,7 @@
 #include<QString>
 #include"piladeshacer.h"
 #include"Mensaje.h"
+#include"colanoleidos.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -47,6 +48,20 @@ public:
 
     void CrearBotonesAccionMensajes(QVBoxLayout *layoutMensajes,const QVector<InfoMensaje> &mensajes,const QString &usuamigo,std::function<void()> actualizarMensajes,PilaDeshacer<Mensaje<QString>>&pilaDeshacer);
 
+    //aqui mapa para las colas de mensajes no leidos por contacto
+    QMap<QString,ColaNoLeidos<Mensaje<QString>>> colasNoLeidos;
+
+    //aqui mapa para las etiquetas de contador de mensajes no leidos por contacto
+    QMap<QString, QLabel*> etiquetasContador;
+
+    QLabel* contadorMensajesGlobal;
+    QMap<QString, int> ultimosMensajesContados;
+    QString chatActivo;
+
+    //aqui crea pila para deshacer mensajes enviados
+    PilaDeshacer<Mensaje<QString>> pilaDeshacer;
+    PilaDeshacer<Mensaje<QString>> pilaRehacer;
+
 
 private slots:
     void mostrarPanelBuscar();
@@ -55,6 +70,8 @@ private slots:
     void mostrarPanelNotificaciones();
     void cerrarSesion();
     void ActualizarContadorNotificaciones();
+    void GuardarEstadoMensajes();
+    void CargarEstadoMensajes();
 
 private:
     Usuario UsuarioActivo;

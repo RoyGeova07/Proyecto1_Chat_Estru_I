@@ -50,9 +50,7 @@ void GuardarMensajeEnArchivo(const Mensaje<T> &m,const QString &u1,const QString
 
 }
 
-QStringList CargarMensajeDesdeArchivo(const QString &u1,const QString &u2);
-
-
+QStringList CargarMensajeDesdeArchivo(const QString &u1, const QString &u2);
 
 inline QString RutaSolicitudes()
 {

@@ -252,7 +252,6 @@ void CrearCarpetaConversacion(const QString &u1,const QString &u2)
     }
 
 }
-
 QStringList CargarMensajeDesdeArchivo(const QString &u1, const QString &u2)
 {
 
@@ -285,3 +284,4 @@ QStringList CargarMensajeDesdeArchivo(const QString &u1, const QString &u2)
     return mensajes;
 
 }
+

@@ -25,16 +25,17 @@
 #include<QRegularExpression>
 #include<QRegularExpressionMatch>
 #include<QCoreApplication>
-#include<QDir>
 #include<QFile>
 #include<QScrollBar>
 #include"Mensaje.h"
 #include<functional>
+#include"colanoleidos.h"
 
 
 MainWindow::MainWindow(Usuario usuario,QWidget *parent)
     : QMainWindow(parent)
     , UsuarioActivo(usuario)
+
 {
 
     QWidget *central=new QWidget(this);
@@ -95,12 +96,18 @@ MainWindow::MainWindow(Usuario usuario,QWidget *parent)
     layoutLateral->addWidget(btnCerrarSesion);
 
 
+    CargarEstadoMensajes();
+
     // ======= aqui se crea el panel derecho ======
     paneles=new QStackedWidget(this);
     paneles->addWidget(crearPanelBuscar());//aqui con el indiice 0
     paneles->addWidget(crearPanelHistorial());//aqui con el indice 1
     paneles->addWidget(crearPanelMensajes());//aqui con el indice 2
     paneles->addWidget(crearPanelNotificaciones());//aqui nuevo indice 3
+
+    for (auto it = colasNoLeidos.begin(); it != colasNoLeidos.end(); ++it) {
+        qDebug() << "Usuario:" << it.key() << " Mensajes no leídos:" << it.value().size();
+    }
 
     //aqui se crea el layout principal
     QHBoxLayout *layoutPrincipal=new QHBoxLayout(central);
@@ -118,6 +125,44 @@ MainWindow::MainWindow(Usuario usuario,QWidget *parent)
     //aqui se mostrara el panel por defecto
     paneles->setCurrentIndex(0);
 
+    // Timer que detecta nuevos mensajes reales
+    QTimer *timerNuevos = new QTimer(paneles);
+    timerNuevos->start(3000);
+    connect(timerNuevos, &QTimer::timeout, this, [=]() {
+        int total = 0;
+        QStringList amigos=gestionContactos.ObtenerContactos(UsuarioActivo.getUsuario());
+        for (const QString& usuario : amigos) {
+            if (usuario == UsuarioActivo.getUsuario()) continue;
+
+            QStringList mensajes = CargarMensajeDesdeArchivo(UsuarioActivo.getUsuario(), usuario);
+            int totalMensajes = mensajes.size();
+            int previos = this->ultimosMensajesContados.value(usuario, 0);
+            int nuevos = totalMensajes - previos;
+
+            if (nuevos > 0 && usuario != this->chatActivo) {
+                // Insertar en cola
+                for (int i = 0; i < nuevos; ++i)
+                    this->colasNoLeidos[usuario].Insertar(Mensaje<QString>());
+
+                // Actualizar etiqueta del contacto
+                if (this->etiquetasContador.contains(usuario)) {
+                    this->etiquetasContador[usuario]->setText(QString::number(this->colasNoLeidos[usuario].size()));
+                    this->etiquetasContador[usuario]->setVisible(true);
+                }
+            }
+
+            // Actualizar conteo interno
+            this->ultimosMensajesContados[usuario] = totalMensajes;
+            total += this->colasNoLeidos[usuario].size();
+        }
+
+        // Mostrar mensaje solo si NO estamos en panel de mensajes
+        if (total > 0 && paneles->currentIndex() != 2) {
+            this->btnMensajes->setText("Mensajes - ¡Nuevos mensajes!");
+        } else if (total == 0) {
+            this->btnMensajes->setText("Mensajes");
+        }
+    });
 
     QTimer *timerContador=new QTimer(this);
     connect(timerContador,&QTimer::timeout,this,[=]()
@@ -158,12 +203,8 @@ void MainWindow::mostrarPanelHistorial()
 void MainWindow::mostrarPanelMensajes()
 {
 
-    QWidget*viejo=paneles->widget(2);
-    QWidget*nuevo=crearPanelMensajes();
-    paneles->removeWidget(viejo);
-    delete viejo;
-    paneles->insertWidget(2,nuevo);
     paneles->setCurrentIndex(2);
+    btnMensajes->setText("Mensajes");
 
 }
 
@@ -182,6 +223,7 @@ void MainWindow::mostrarPanelNotificaciones()
 void MainWindow::cerrarSesion()
 {
 
+    GuardarEstadoMensajes();
     MarcarUsuarioComoDesconectado(UsuarioActivo.getUsuario());
     Inicio *i=new Inicio();
     i->show();
@@ -190,6 +232,10 @@ void MainWindow::cerrarSesion()
 }
 
 // ====AQUI FUNCIONES PARA CREAR LOS PANELES=====
+//========================================BUSCADOR======================================================================
+//========================================BUSCADOR======================================================================
+//========================================BUSCADOR======================================================================
+//========================================BUSCADOR======================================================================
 QWidget *MainWindow::crearPanelBuscar()
 {
     QWidget *panel = new QWidget;
@@ -462,6 +508,10 @@ QWidget *MainWindow::crearPanelBuscar()
     return panel;
 }
 
+//========================================HISTORIAl======================================================================
+//========================================HISTORIAl======================================================================
+//========================================HISTORIAl======================================================================
+//========================================HISTORIAl======================================================================
 QWidget *MainWindow::crearPanelHistorial()
 {
 
@@ -470,7 +520,10 @@ QWidget *MainWindow::crearPanelHistorial()
     return panel;
 
 }
-
+//========================================MENSAJES======================================================================
+//========================================MENSAJES======================================================================
+//========================================MENSAJES======================================================================
+//========================================MENSAJES======================================================================
 QWidget *MainWindow::crearPanelMensajes()
 {
 
@@ -493,9 +546,23 @@ QWidget *MainWindow::crearPanelMensajes()
     chatlayout->addWidget(posicion);
     mainlayout->addWidget(panelchat);
 
+
+    QStringList amigos = gestionContactos.ObtenerContactos(UsuarioActivo.getUsuario());
+    for (const QString &amigo : amigos)
+    {
+
+        if (!this->ultimosMensajesContados.contains(amigo)) {
+            this->ultimosMensajesContados[amigo] = CargarMensajeDesdeArchivo(UsuarioActivo.getUsuario(), amigo).size();
+        }
+
+    }
+    this->chatActivo = ""; // ningun chat abierto al inicio
+
+    this->btnMensajes->setText("Mensajes");
+
+    //AQUI SE MUESTRAN LOS CONTACTOS
     //aqui se obtienen todos los usuarios y amigos
     QList<Usuario>usuarios=CargarUsuarios();
-    QStringList amigos=gestionContactos.ObtenerContactos(UsuarioActivo.getUsuario());
 
     //aqui se mostraran cada amigo con su avatar y nombre completo
     QMap<QString, QLabel*> mapaPuntosEstado; // Para actualizar los puntos en tiempo real
@@ -551,6 +618,35 @@ QWidget *MainWindow::crearPanelMensajes()
                 layout->addWidget(nombreWidget); // agregas el widget con el nombre y el punto
                 layout->addStretch();
 
+
+                // Crear y agregar el contador de mensajes no leidos
+                QLabel* etiquetaContador = new QLabel;
+                etiquetaContador->setStyleSheet("background-color: red; color: white; font-weight: bold; padding: 2px 6px; border-radius: 10px; font-size: 13px;");
+                etiquetaContador->setFixedSize(24, 20);
+                etiquetaContador->setAlignment(Qt::AlignCenter);
+
+                // Obtener la cantidad de mensajes no leídos cargados desde archivo (colasNoLeidos)
+                int cantidad = 0;
+                if (this->colasNoLeidos.contains(u.getUsuario())) {
+                    cantidad = this->colasNoLeidos[u.getUsuario()].size();
+                } else {
+                    this->colasNoLeidos[u.getUsuario()] = ColaNoLeidos<Mensaje<QString>>();
+                }
+
+                etiquetaContador->setText(QString::number(cantidad));
+                etiquetaContador->setVisible(cantidad > 0);
+
+                // Añadir al layout visual
+                layout->addWidget(etiquetaContador);
+
+                // Guardar en mapa
+                this->etiquetasContador[u.getUsuario()] = etiquetaContador;
+                if (this->colasNoLeidos.contains(u.getUsuario())) {
+                    int cantidad = this->colasNoLeidos[u.getUsuario()].size();
+                    etiquetaContador->setText(QString::number(cantidad));
+                    etiquetaContador->setVisible(cantidad > 0);
+                }
+
                 //aqui se crea el item
                 QListWidgetItem*item=new QListWidgetItem;
                 item->setSizeHint(QSize(0,60));  //aqui mayor altura para mejor visibilidad
@@ -569,8 +665,7 @@ QWidget *MainWindow::crearPanelMensajes()
 
     }
 
-    //aqui crea pila para deshacer mensajes enviados
-    static PilaDeshacer<Mensaje<QString>> pilaDeshacer;
+    static bool MensajeEliminado=false;
     QTimer *TimerMensajes=new QTimer(panel);//aqui se crea una sola vez
     TimerMensajes->start(3000);
 
@@ -579,6 +674,20 @@ QWidget *MainWindow::crearPanelMensajes()
     {
 
         QString usuamigo=item->data(Qt::UserRole).toString();
+
+        this->chatActivo = usuamigo;
+
+        // Reset de cola y etiqueta visual
+        if (this->colasNoLeidos.contains(usuamigo)) {
+            this->colasNoLeidos[usuamigo] = ColaNoLeidos<Mensaje<QString>>();
+        }
+        if (this->etiquetasContador.contains(usuamigo)) {
+            this->etiquetasContador[usuamigo]->setVisible(false);
+        }
+
+        // Se considera como leídos todos los mensajes actuales
+        this->ultimosMensajesContados[usuamigo] = CargarMensajeDesdeArchivo(UsuarioActivo.getUsuario(), usuamigo).size();
+        this->btnMensajes->setText("Mensajes");
 
         //aqui se busca nombre completoo del amigo
         QString nombrecompleto;
@@ -592,7 +701,6 @@ QWidget *MainWindow::crearPanelMensajes()
                 break;
 
             }
-
         }
         //aqui se limpia la vista anterior
         QLayoutItem *w;
@@ -649,15 +757,14 @@ QWidget *MainWindow::crearPanelMensajes()
         chatlayout->addWidget(entradaMensaje);
         chatlayout->addLayout(botonesLayout);
 
-
-        //=============== AQUI EL PROBLEMAAAAA =====================
-
         std::function<void()> actualizarMensajes;
 
         actualizarMensajes = [=]() mutable
         {
             QVector<InfoMensaje> botonesPendientes;
             layoutMensajes->setAlignment(Qt::AlignTop);
+            QScrollBar* scrollBar = scrollArea->verticalScrollBar();
+            bool EstaAlFinal=(scrollBar->value()==scrollBar->maximum());
             QLayoutItem *child;
             while((child = layoutMensajes->takeAt(0))!=nullptr)
             {
@@ -670,6 +777,7 @@ QWidget *MainWindow::crearPanelMensajes()
 
             QStringList mensajes = CargarMensajeDesdeArchivo(UsuarioActivo.getUsuario(), usuamigo);
             QString fechaAnterior;
+
 
             for (const QString &linea : mensajes) {
                 QRegularExpression re(R"(\[(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})\] ([^ ]+) \(([^)]+)\): (.+))");
@@ -694,21 +802,25 @@ QWidget *MainWindow::crearPanelMensajes()
                     }
 
                     QLabel *msg = new QLabel(contenido + "\n" + hora);
-                    msg->setStyleSheet("padding: 6px; border-radius: 10px; font-size: 13px;");
+                    msg->setStyleSheet("padding: 8px 6px; border-radius: 12px; font-size: 14px; font-weight: bold;"); // verde suave + texto oscuro
                     QHBoxLayout *lineaLayout = new QHBoxLayout;
 
-                    if (emisor == UsuarioActivo.getUsuario()) {
-                        msg->setStyleSheet(msg->styleSheet() + "background-color: #d1f0d1;");
+                    if(emisor==UsuarioActivo.getUsuario())
+                    {
+
+                        msg->setStyleSheet(msg->styleSheet() + "background-color: #a3e4d7; color: #1c2833;");// gris + texto oscuro
                         msg->setAlignment(Qt::AlignRight);
                         lineaLayout->addStretch();
                         lineaLayout->addWidget(msg);
 
                         botonesPendientes.append({fecha, hora, emisor, tipo, contenido});
-                    } else {
+                    }else{
+
                         msg->setStyleSheet(msg->styleSheet() + "background-color: #e1e1e1;");
                         msg->setAlignment(Qt::AlignLeft);
                         lineaLayout->addWidget(msg);
                         lineaLayout->addStretch();
+
                     }
 
                     QWidget *lineaWidget = new QWidget;
@@ -717,13 +829,33 @@ QWidget *MainWindow::crearPanelMensajes()
                 }
             }
 
-            scrollArea->verticalScrollBar()->setValue(scrollArea->verticalScrollBar()->maximum());
+            if(EstaAlFinal)
+            {
+
+                scrollBar->setValue(scrollBar->maximum());
+
+            }
+
+        };
+
+        auto ObtenerRutaArchivo=[](const QString &usuario1,const QString &usuario2)
+        {
+
+            QDir dir(QCoreApplication::applicationDirPath());
+            dir.cdUp();
+            QString nombre1=usuario1.toLower();
+            QString nombre2=usuario2.toLower();
+            if(nombre1>nombre2)std::swap(nombre1,nombre2);
+            return dir.filePath("conversaciones/" + nombre1 + "_" + nombre2 + ".txt");
+
 
         };
 
         // Al presionar enviar
         //aaqui asi capturara todo por copia excepto pila, que se captura por referencia, permitiendose modificarla.
-        connect(btnEnviar, &QPushButton::clicked, this, [=,&pilaDeshacer]() {
+        connect(btnEnviar, &QPushButton::clicked, this, [=]()
+        {
+
             QString texto = entradaMensaje->text().trimmed();
             if (texto.isEmpty()) return;
 
@@ -732,8 +864,67 @@ QWidget *MainWindow::crearPanelMensajes()
 
             //AQUI APLICANDO PILAS
             pilaDeshacer.insertar(m);
+            MensajeEliminado=false;//aqui no se a eliminado nada aun
             entradaMensaje->clear();
             actualizarMensajes();
+
+        });
+
+        connect(btnDeshacer,&QPushButton::clicked,this,[=]()
+        {
+
+            if(!pilaDeshacer.empty())
+            {
+
+                Mensaje<QString>m=pilaDeshacer.top();
+                pilaRehacer.insertar(m);
+                QString rutaArchivo=ObtenerRutaArchivo(UsuarioActivo.getUsuario(),usuamigo);
+
+                QFile archivo(rutaArchivo);
+                if(archivo.open(QIODevice::ReadOnly|QIODevice::Text))
+                {
+
+                    QStringList lineas;
+                    QTextStream in(&archivo);
+                    while(!in.atEnd()) lineas<<in.readLine();
+                    archivo.close();
+
+                    QString formato="["+m.getFecha().toString("yyyy-MM-dd HH:mm")+"] "+m.getEmisor()+" ("+(m.getTipo()==Mensaje<QString>::TEXTO?"texto":"sticker")+"): "+m.getContenido();
+                    lineas.removeAll(formato);
+
+                    if(archivo.open(QIODevice::WriteOnly|QIODevice::Text|QIODevice::Truncate))
+                    {
+
+                        QTextStream out(&archivo);
+                        for(const QString &l:lineas)out<<l<<"\n";
+                        archivo.close();
+                        MensajeEliminado=true;
+                        //pilaDeshacer.pop();
+                        actualizarMensajes();
+
+                    }
+
+                }
+
+            }
+
+        });
+
+        connect(btnRestaurar,&QPushButton::clicked,this,[=]()
+        {
+
+            if(!pilaDeshacer.empty()&&MensajeEliminado)
+            {
+
+                Mensaje<QString>m=pilaDeshacer.top();
+                GuardarMensajeEnArchivo(m,UsuarioActivo.getUsuario(),usuamigo);
+                pilaDeshacer.insertar(m);// vuelve a la pila de deshacer
+                pilaRehacer.pop();//aqui lo quita de rehacer
+                MensajeEliminado=false;
+                actualizarMensajes();
+
+            }
+
         });
 
         actualizarMensajes();//aqui inicial
@@ -741,6 +932,8 @@ QWidget *MainWindow::crearPanelMensajes()
         connect(TimerMensajes,&QTimer::timeout,this,actualizarMensajes);
 
     });
+
+
 
     int contactosInicial=amigos.size();
 
@@ -1003,6 +1196,74 @@ void MainWindow::ActualizarContadorNotificaciones()
     }else{
 
         btnNotificaciones->setText("Buzon");
+
+    }
+
+}
+
+void MainWindow::GuardarEstadoMensajes()
+{
+
+
+    QDir dir(QCoreApplication::applicationDirPath());
+    dir.cdUp();  // salir de /debug o /release
+    QDir carpeta(dir.filePath("estado_mensajes"));
+    if(!carpeta.exists())carpeta.mkpath(".");
+
+    QString ruta=carpeta.filePath("estado_" + UsuarioActivo.getUsuario() + ".txt");
+    QFile file(ruta);
+    if(file.open(QIODevice::WriteOnly|QIODevice::Text))
+    {
+
+        QTextStream out(&file);
+        for(auto messi=ultimosMensajesContados.begin();messi!=ultimosMensajesContados.end();++messi)
+        {
+
+            out<<messi.key()<<";"<<messi.value()<<";"<<colasNoLeidos[messi.key()].size()<<"\n";
+
+        }
+        file.close();
+
+    }
+
+
+}
+
+void MainWindow::CargarEstadoMensajes()
+{
+
+    QDir dir(QCoreApplication::applicationDirPath());
+    dir.cdUp();
+    QDir carpeta(dir.filePath("estado_mensajes"));
+    QString ruta = carpeta.filePath("estado_" + UsuarioActivo.getUsuario() + ".txt");
+
+    QFile file(ruta);
+    if(file.open(QIODevice::ReadOnly|QIODevice::Text))
+    {
+
+        QTextStream in(&file);
+        while(!in.atEnd())
+        {
+
+            QString linea=in.readLine();
+            QStringList partes=linea.split(';');
+            if(partes.size()==3)
+            {
+
+                QString usuario=partes[0];
+                int mensajesPrevios=partes[1].toInt();
+                int cola=partes[2].toInt();
+                ultimosMensajesContados[usuario]=mensajesPrevios;
+
+                ColaNoLeidos<Mensaje<QString>> colaTemp;
+                for (int i = 0; i < cola; ++i)
+                    colaTemp.Insertar(Mensaje<QString>());
+                colasNoLeidos[usuario] = colaTemp;
+
+            }
+
+        }
+        file.close();
 
     }
 
