@@ -89,6 +89,7 @@ private:
     QPushButton *btnHistorial;
     QPushButton *btnNotificaciones;
     QPushButton *btnCerrarSesion;
+    QListWidgetItem* itemContactoSeleccionado = nullptr;
 
 };
 #endif // MAINWINDOW_H

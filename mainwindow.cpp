@@ -673,6 +673,35 @@ QWidget *MainWindow::crearPanelMensajes()
     connect(listacontactos,&QListWidget::itemClicked,[=](QListWidgetItem*item)
     {
 
+        //esto servira para poder remarcar el usuario con quien se mensajea
+        if(itemContactoSeleccionado)
+        {
+
+            QWidget* anterior=listacontactos->itemWidget(itemContactoSeleccionado);
+            if(anterior)
+            {
+
+                anterior->setStyleSheet(
+                    "background-color: #f9f9f9;"
+                    "border: 1px solid #dcdde1;"
+                    "border-radius: 6px;");
+
+            }
+
+        }
+
+        QWidget* actual = listacontactos->itemWidget(item);
+        if(actual)
+        {
+
+            actual->setStyleSheet(
+                "background-color: #d6eaf8;"
+                "border: 2px solid #3498db;"
+                "border-radius: 6px;");
+
+        }
+        itemContactoSeleccionado=item;
+
         QString usuamigo=item->data(Qt::UserRole).toString();
 
         this->chatActivo = usuamigo;
@@ -801,6 +830,10 @@ QWidget *MainWindow::crearPanelMensajes()
 
                     }
 
+                    QLabel *nombreEmisor = new QLabel(emisor);
+                    nombreEmisor->setStyleSheet("font-size: 10px; color: gray;");
+                    nombreEmisor->setAlignment(emisor==UsuarioActivo.getNombre()? Qt::AlignRight:Qt::AlignLeft);
+
                     QLabel *msg = new QLabel(contenido + "\n" + hora);
                     msg->setStyleSheet("padding: 8px 6px; border-radius: 12px; font-size: 14px; font-weight: bold;"); // verde suave + texto oscuro
                     QHBoxLayout *lineaLayout = new QHBoxLayout;
@@ -810,16 +843,18 @@ QWidget *MainWindow::crearPanelMensajes()
 
                         msg->setStyleSheet(msg->styleSheet() + "background-color: #a3e4d7; color: #1c2833;");// gris + texto oscuro
                         msg->setAlignment(Qt::AlignRight);
-                        lineaLayout->addStretch();
+                        lineaLayout->addWidget(nombreEmisor);
                         lineaLayout->addWidget(msg);
+                        lineaLayout->setAlignment(Qt::AlignRight);
 
                         botonesPendientes.append({fecha, hora, emisor, tipo, contenido});
                     }else{
 
-                        msg->setStyleSheet(msg->styleSheet() + "background-color: #e1e1e1;");
+                        msg->setStyleSheet(msg->styleSheet() + "background-color: #e1e1e1; color: #2d3436;");
                         msg->setAlignment(Qt::AlignLeft);
+                        lineaLayout->addWidget(nombreEmisor);
                         lineaLayout->addWidget(msg);
-                        lineaLayout->addStretch();
+                        lineaLayout->setAlignment(Qt::AlignLeft);
 
                     }
 
@@ -1130,18 +1165,6 @@ QWidget *MainWindow::crearPanelNotificaciones()
 
     scroll->setWidget(contenedor);
     layoutPanel->addWidget(scroll);
-
-    QList<Notificacion> actualizadas = notis;
-    bool huboCambios = false;
-    for (int i = 0; i < actualizadas.size(); ++i) {
-        if (actualizadas[i].getTipo() == "respuesta" && actualizadas[i].getEstado().trimmed() == "nueva") {
-            actualizadas[i].setEstado("vista");
-            huboCambios = true;
-        }
-    }
-    if (huboCambios) {
-        gestor.guardar(UsuarioActivo.getUsuario(), actualizadas);
-    }
 
     ActualizarContadorNotificaciones();
 
