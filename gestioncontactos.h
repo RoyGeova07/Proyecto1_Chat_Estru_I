@@ -70,6 +70,7 @@ public:
     QString ObtenerEstadoSolicitud(QString remitente,QString destinatario)const;
     QString ObtenerEstadoExacto(QString remitente, QString destinatario, int posicion)const;
     void CargarDatos();
+    bool TieneSolicitudRecibida(const QString &yo,const QString &otro);
 
 
 private:

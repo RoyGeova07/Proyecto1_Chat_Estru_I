@@ -6,6 +6,7 @@
 #include<QPixmap>
 #include<QFile>
 #include<QTextStream>
+#include<QDir>
 #include"usuario.h"
 #include"mainwindow.h"
 #include"login.h"
@@ -293,6 +294,26 @@ void Registro::RegistrarUsuario()
         archivo.close();
 
         MarcarUsuarioComoConectado(nuevo.getUsuario());
+
+        //aqui se crea la carpeta de stickers si no existe
+        QString rutaBase=QDir::currentPath();
+        QDir directorioStickers(rutaBase+"/stickers_usuarios");
+        if(!directorioStickers.exists())
+        {
+
+            directorioStickers.mkpath(".");
+
+        }
+
+        //aqui se crea el archivo de stickers personal del usuario
+        QString ArchivoSticker=directorioStickers.filePath("stickers_"+nuevo.getUsuario()+".txt");
+        QFile ArchivoStickerUsuario(ArchivoSticker);
+        if(ArchivoStickerUsuario.open(QIODevice::WriteOnly|QIODevice::Text))
+        {
+
+            ArchivoStickerUsuario.close();//vacio se crea crick
+
+        }
 
         QMessageBox::information(this,"Exito","Usuario "+ui->txtUsuario->text()+ " registrado correctamente.");
 

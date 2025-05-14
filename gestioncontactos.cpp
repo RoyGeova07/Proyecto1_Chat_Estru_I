@@ -425,6 +425,26 @@ void GestionContactos::liberarSolicitudes()
 
 }
 
+bool GestionContactos::TieneSolicitudRecibida(const QString &yo, const QString &otro)
+{
+
+    NodoSolicitud*actual=solicitudes;
+    while(actual)
+    {
+
+        if(actual->dato.getRemitente()==otro&&actual->dato.getDestinaario()==yo&&actual->dato.getEstado()=="pendiente")
+        {
+
+            return true;
+
+        }
+        actual=actual->siguiente;
+
+    }
+    return false;
+
+}
+
 void GestionContactos::liberarContactos()
 {
 

@@ -23,6 +23,7 @@ SOURCES += \
     usuario.cpp
 
 HEADERS += \
+    ClickableLabel.h \
     EstadoUsuario.h \
     Mensaje.h \
     colanoleidos.h \

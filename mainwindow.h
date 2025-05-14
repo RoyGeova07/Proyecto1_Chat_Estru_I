@@ -66,12 +66,14 @@ public:
 private slots:
     void mostrarPanelBuscar();
     void mostrarPanelMensajes();
-    void mostrarPanelHistorial();
+    void mostrarPanelStickers();
     void mostrarPanelNotificaciones();
     void cerrarSesion();
     void ActualizarContadorNotificaciones();
     void GuardarEstadoMensajes();
     void CargarEstadoMensajes();
+    void mostrarPanelStickersFavoritos();
+    void EnviarStickers(const QString &nombreSticker);
 
 private:
     Usuario UsuarioActivo;
@@ -79,14 +81,16 @@ private:
 
     QWidget *crearPanelBuscar();
     QWidget *crearPanelMensajes();
-    QWidget *crearPanelHistorial();
+    QWidget *crearPanelStickers();
     QWidget *crearPanelNotificaciones();
+    QWidget *panelStickers=nullptr;
+    QVBoxLayout *layoutMensajes=nullptr;
 
     // Elementos principales
     QStackedWidget *paneles;
     QPushButton *btnBuscar;
     QPushButton *btnMensajes;
-    QPushButton *btnHistorial;
+    QPushButton *btnVentanaStickers;
     QPushButton *btnNotificaciones;
     QPushButton *btnCerrarSesion;
     QListWidgetItem* itemContactoSeleccionado = nullptr;
