@@ -74,6 +74,9 @@ private slots:
     void CargarEstadoMensajes();
     void mostrarPanelStickersFavoritos();
     void EnviarStickers(const QString &nombreSticker);
+    QString obtenerRutaFavoritos(const QString &usuario) const;
+    QString obtenerRutaStickersDisponibles() const;
+    QString ObtenerRutaConversacion(const QString &usuario1, const QString &usuario2) const;
 
 private:
     Usuario UsuarioActivo;

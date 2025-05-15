@@ -296,17 +296,13 @@ void Registro::RegistrarUsuario()
         MarcarUsuarioComoConectado(nuevo.getUsuario());
 
         //aqui se crea la carpeta de stickers si no existe
-        QString rutaBase=QDir::currentPath();
-        QDir directorioStickers(rutaBase+"/stickers_usuarios");
-        if(!directorioStickers.exists())
-        {
+        QString rutaBase=QDir(QCoreApplication::applicationDirPath()).absolutePath();
+        QString CarpetaStickers=rutaBase+"/stickers_usuarios";
 
-            directorioStickers.mkpath(".");
-
-        }
+        QDir().mkpath(CarpetaStickers);
 
         //aqui se crea el archivo de stickers personal del usuario
-        QString ArchivoSticker=directorioStickers.filePath("stickers_"+nuevo.getUsuario()+".txt");
+        QString ArchivoSticker=CarpetaStickers+ "/stickers_" + nuevo.getUsuario() + ".txt";
         QFile ArchivoStickerUsuario(ArchivoSticker);
         if(ArchivoStickerUsuario.open(QIODevice::WriteOnly|QIODevice::Text))
         {

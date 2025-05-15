@@ -39,7 +39,7 @@ MainWindow::MainWindow(Usuario usuario,QWidget *parent)
 
 {
 
-    // ✅ Crear carpeta de stickers disponibles
+    //aqui crea carpeta de stickers disponibles
     QString rutaBase = QDir::currentPath();
     QDir carpetaStickersDisponibles(rutaBase + "/stickers_disponibles");
     if (!carpetaStickersDisponibles.exists()) {
@@ -126,7 +126,9 @@ MainWindow::MainWindow(Usuario usuario,QWidget *parent)
     connect(btnBuscar,&QPushButton::clicked,this,&MainWindow::mostrarPanelBuscar);
     connect(btnVentanaStickers,&QPushButton::clicked,this,&MainWindow::mostrarPanelStickers);
     connect(btnMensajes,&QPushButton::clicked,this,&MainWindow::mostrarPanelMensajes);
-    connect(btnNotificaciones, &QPushButton::clicked, this, [=]() {
+    connect(btnNotificaciones, &QPushButton::clicked, this, [=]()
+    {
+
         //aqui marcar como vistas inmediatamente
         GestorNotificaciones gestor;
         gestor.MarcarComoVistaBuzon(UsuarioActivo.getUsuario());
@@ -136,6 +138,7 @@ MainWindow::MainWindow(Usuario usuario,QWidget *parent)
 
         //aqui ahora si mostramos el panel
         mostrarPanelNotificaciones();
+
     });
     connect(btnCerrarSesion,&QPushButton::clicked,this,&MainWindow::cerrarSesion);
 
@@ -149,36 +152,50 @@ MainWindow::MainWindow(Usuario usuario,QWidget *parent)
     connect(timerNuevos, &QTimer::timeout, this, [=]() {
         int total = 0;
         QStringList amigos=gestionContactos.ObtenerContactos(UsuarioActivo.getUsuario());
-        for (const QString& usuario : amigos) {
-            if (usuario == UsuarioActivo.getUsuario()) continue;
+        for (const QString& usuario : amigos)
+        {
+
+            if (usuario==UsuarioActivo.getUsuario()) continue;
 
             QStringList mensajes = CargarMensajeDesdeArchivo(UsuarioActivo.getUsuario(), usuario);
             int totalMensajes = mensajes.size();
             int previos = this->ultimosMensajesContados.value(usuario, 0);
             int nuevos = totalMensajes - previos;
 
-            if (nuevos > 0 && usuario != this->chatActivo) {
+            if (nuevos > 0 && usuario != this->chatActivo)
+            {
+
                 // Insertar en cola
-                for (int i = 0; i < nuevos; ++i)
+                for (int i=0;i < nuevos; ++i)
                     this->colasNoLeidos[usuario].Insertar(Mensaje<QString>());
 
-                // Actualizar etiqueta del contacto
-                if (this->etiquetasContador.contains(usuario)) {
+                //aqui actualiza la etiqueta del contacto
+                if (this->etiquetasContador.contains(usuario))
+                {
+
                     this->etiquetasContador[usuario]->setText(QString::number(this->colasNoLeidos[usuario].size()));
                     this->etiquetasContador[usuario]->setVisible(true);
+
                 }
+
             }
 
             // Actualizar conteo interno
             this->ultimosMensajesContados[usuario] = totalMensajes;
-            total += this->colasNoLeidos[usuario].size();
+            total+=this->colasNoLeidos[usuario].size();
+
         }
 
         // Mostrar mensaje solo si NO estamos en panel de mensajes
-        if (total > 0 && paneles->currentIndex() != 2) {
+        if(total>0&&paneles->currentIndex()!=2)
+        {
+
             this->btnMensajes->setText("Mensajes - ¡Nuevos mensajes!");
-        } else if (total == 0) {
+
+        }else if(total==0){
+
             this->btnMensajes->setText("Mensajes");
+
         }
     });
 
@@ -362,8 +379,8 @@ QWidget *MainWindow::crearPanelBuscar()
         btnSolicitud->setStyleSheet("QPushButton { background-color: #3498db; color: white; padding: 8px 16px; font-size: 13px; border-radius: 6px; } QPushButton:disabled { background-color: gray; }");
         mapaBotonesSolicitud[u.getUsuario()] = btnSolicitud;
 
-        QTimer *timerBotones = new QTimer(panel);
-        connect(timerBotones, &QTimer::timeout, panel, [=]() {
+        QTimer *timerBotones=new QTimer(panel);
+        connect(timerBotones,&QTimer::timeout, panel,[=]() {
             gestionContactos.CargarDatos(); // Recarga desde archivo actualizado
 
             for (const Usuario &u : usuarios) {
@@ -569,12 +586,11 @@ QWidget *MainWindow::crearPanelStickers()
     grid->setContentsMargins(10,10,10,10);
 
     //aqui lee stickers desde la carpeta
-    QDir carpeta(QDir::currentPath()+"/stickers_disponibles");
+    QDir carpeta(obtenerRutaStickersDisponibles());
+    QString rutaArchivo=obtenerRutaFavoritos(UsuarioActivo.getUsuario());
     QStringList listaStickers=carpeta.entryList(QStringList()<<"*.png"<<"*.jpg",QDir::Files);
 
     //aqui se leen los stickes favoritos del usuario
-    QString rutaBase=QDir::currentPath();
-    QString rutaArchivo=rutaBase+"/stickers_usuarios/stickers_"+UsuarioActivo.getUsuario()+".txt";
     QSet<QString>favoritos;//aqui el set se utiliza para almacenar elementos unicos y ordenados
 
     QFile ArchivoFavoritos(rutaArchivo);
@@ -844,8 +860,11 @@ QWidget *MainWindow::crearPanelMensajes()
     for (const QString &amigo : amigos)
     {
 
-        if (!this->ultimosMensajesContados.contains(amigo)) {
+        if (!this->ultimosMensajesContados.contains(amigo))
+        {
+
             this->ultimosMensajesContados[amigo] = CargarMensajeDesdeArchivo(UsuarioActivo.getUsuario(), amigo).size();
+
         }
 
     }
@@ -912,17 +931,21 @@ QWidget *MainWindow::crearPanelMensajes()
                 layout->addStretch();
 
 
-                // Crear y agregar el contador de mensajes no leidos
+                //aqui crea y agregar el contador de mensajes no leidos
                 QLabel* etiquetaContador = new QLabel;
                 etiquetaContador->setStyleSheet("background-color: red; color: white; font-weight: bold; padding: 2px 6px; border-radius: 10px; font-size: 13px;");
                 etiquetaContador->setFixedSize(24, 20);
                 etiquetaContador->setAlignment(Qt::AlignCenter);
 
-                // Obtener la cantidad de mensajes no leídos cargados desde archivo (colasNoLeidos)
+                //aqio obtiene la cantidad de mensajes no leidos cargados desde archivo (colasNoLeidos)
                 int cantidad = 0;
-                if (this->colasNoLeidos.contains(u.getUsuario())) {
+                if (this->colasNoLeidos.contains(u.getUsuario()))
+                {
+
                     cantidad = this->colasNoLeidos[u.getUsuario()].size();
-                } else {
+
+                }else{
+
                     this->colasNoLeidos[u.getUsuario()] = ColaNoLeidos<Mensaje<QString>>();
                 }
 
@@ -1072,7 +1095,7 @@ QWidget *MainWindow::crearPanelMensajes()
 
         connect(btnSticker,&QPushButton::clicked,this,[=](){
 
-           mostrarPanelStickers();
+           mostrarPanelStickersFavoritos();
 
         });
 
@@ -1114,18 +1137,22 @@ QWidget *MainWindow::crearPanelMensajes()
             QString fechaAnterior;
 
 
-            for (const QString &linea : mensajes) {
+            for (const QString &linea : mensajes)
+            {
+
                 QRegularExpression re(R"(\[(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})\] ([^ ]+) \(([^)]+)\): (.+))");
                 QRegularExpressionMatch match=re.match(linea);
 
-                if (match.hasMatch()) {
-                    QString fecha = match.captured(1);
-                    QString hora = match.captured(2);
-                    QString emisor = match.captured(3);
-                    QString tipo = match.captured(4);
-                    QString contenido = match.captured(5);
+                if (match.hasMatch())
+                {
 
-                    if (fecha != fechaAnterior)
+                    QString fecha=match.captured(1);
+                    QString hora=match.captured(2);
+                    QString emisor=match.captured(3);
+                    QString tipo=match.captured(4);
+                    QString contenido=match.captured(5);
+
+                    if (fecha!=fechaAnterior)
                     {
 
                         QLabel *fechaLabel = new QLabel(QDate::fromString(fecha, "yyyy-MM-dd").toString("dd MMMM yyyy"));
@@ -1140,33 +1167,73 @@ QWidget *MainWindow::crearPanelMensajes()
                     nombreEmisor->setStyleSheet("font-size: 10px; color: gray;");
                     nombreEmisor->setAlignment(emisor==UsuarioActivo.getNombre()? Qt::AlignRight:Qt::AlignLeft);
 
-                    QLabel *msg = new QLabel(contenido + "\n" + hora);
-                    msg->setStyleSheet("padding: 8px 6px; border-radius: 12px; font-size: 14px; font-weight: bold;"); // verde suave + texto oscuro
-                    QHBoxLayout *lineaLayout = new QHBoxLayout;
-
-                    if(emisor==UsuarioActivo.getUsuario())
+                    if (tipo=="sticker")
                     {
 
-                        msg->setStyleSheet(msg->styleSheet() + "background-color: #a3e4d7; color: #1c2833;");// gris + texto oscuro
-                        msg->setAlignment(Qt::AlignRight);
-                        lineaLayout->addWidget(nombreEmisor);
-                        lineaLayout->addWidget(msg);
-                        lineaLayout->setAlignment(Qt::AlignRight);
+                        QLabel *sticker=new QLabel;
+                        QString rutaCompleta=obtenerRutaStickersDisponibles() + "/" + contenido;
+                        if(QFile::exists(rutaCompleta))
+                        {
 
-                        botonesPendientes.append({fecha, hora, emisor, tipo, contenido});
+                            sticker->setPixmap(QPixmap(rutaCompleta).scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                            sticker->setStyleSheet("background-color: transparent; border-radius: 10px;");
+                            sticker->setAlignment(emisor == UsuarioActivo.getUsuario() ? Qt::AlignRight : Qt::AlignLeft);
+
+                        }else{
+
+                            sticker->setText("[Sticker no encontrado]");
+
+                        }
+
+                        //aqui se crea la etique la hora
+                        QLabel*horaLabel=new QLabel(hora);
+                        horaLabel->setStyleSheet("font-size: 10px; color: gray; font-weight: bold;");
+                        horaLabel->setAlignment(emisor==UsuarioActivo.getUsuario()?Qt::AlignRight:Qt::AlignLeft);
+
+
+                        //aqui se crea el contenedor del sticker y hora
+                        QVBoxLayout *cont = new QVBoxLayout;
+                        cont->addWidget(nombreEmisor);
+                        cont->addWidget(sticker);
+                        cont->addWidget(horaLabel);
+                        cont->setAlignment(emisor==UsuarioActivo.getUsuario()?Qt::AlignRight:Qt::AlignLeft);
+
+                        QWidget *linea = new QWidget;
+                        linea->setLayout(cont);
+                        layoutMensajes->addWidget(linea);
+
                     }else{
 
-                        msg->setStyleSheet(msg->styleSheet() + "background-color: #e1e1e1; color: #2d3436;");
-                        msg->setAlignment(Qt::AlignLeft);
-                        lineaLayout->addWidget(nombreEmisor);
-                        lineaLayout->addWidget(msg);
-                        lineaLayout->setAlignment(Qt::AlignLeft);
+                        QLabel *msg=new QLabel(contenido + "\n" + hora);
+                        msg->setStyleSheet("padding: 8px 6px; border-radius: 12px; font-size: 14px; font-weight: bold;");
+                        QHBoxLayout *lineaLayout=new QHBoxLayout;
 
+                        if (emisor==UsuarioActivo.getUsuario())
+                        {
+
+                            msg->setStyleSheet(msg->styleSheet() + "background-color: #a3e4d7; color: #1c2833;");
+                            msg->setAlignment(Qt::AlignRight);
+                            lineaLayout->addWidget(nombreEmisor);
+                            lineaLayout->addWidget(msg);
+                            lineaLayout->setAlignment(Qt::AlignRight);
+
+                            botonesPendientes.append({fecha, hora, emisor, tipo, contenido});
+
+                        }else{
+
+                            msg->setStyleSheet(msg->styleSheet() + "background-color: #e1e1e1; color: #2d3436;");
+                            msg->setAlignment(Qt::AlignLeft);
+                            lineaLayout->addWidget(nombreEmisor);
+                            lineaLayout->addWidget(msg);
+                            lineaLayout->setAlignment(Qt::AlignLeft);
+
+                        }
+
+                        QWidget *lineaWidget=new QWidget;
+                        lineaWidget->setLayout(lineaLayout);
+                        layoutMensajes->addWidget(lineaWidget);
                     }
 
-                    QWidget *lineaWidget = new QWidget;
-                    lineaWidget->setLayout(lineaLayout);
-                    layoutMensajes->addWidget(lineaWidget);
                 }
             }
 
@@ -1388,8 +1455,10 @@ QWidget *MainWindow::crearPanelNotificaciones()
             layout->addWidget(titulo);
             layout->addWidget(mensaje);
 
-            if(EstadoReal=="pendiente"){
-                // Solo si está pendiente mostramos los botones
+            if(EstadoReal=="pendiente")
+            {
+
+                //aqui  Solo si est pendiente mostramos los botones
                 QHBoxLayout *botonera=new QHBoxLayout;
                 QPushButton *btnAceptar=new QPushButton("Aceptar");
                 QPushButton *btnRechazar=new QPushButton("Rechazar");
@@ -1614,16 +1683,29 @@ void MainWindow::mostrarPanelStickersFavoritos()
 
     }
 
+    //aqui se crea el panel flotante
     panelStickers=new QWidget(this);
     panelStickers->setWindowFlags(Qt::Popup);
-    panelStickers->setStyleSheet("background-color: white; border; 1px solid gray;");
+    panelStickers->setStyleSheet("background-color: white; border: 1px solid gray;");
+    panelStickers->setMinimumSize(300,200);
 
     QVBoxLayout*layout=new QVBoxLayout(panelStickers);
+    layout->setContentsMargins(10,10,10,10);
+
+    //aqui titulo con el nombre de usuario
+    QLabel *titulo=new QLabel("Mis Stickers - "+UsuarioActivo.getUsuario());
+    titulo->setAlignment(Qt::AlignCenter);
+    titulo->setStyleSheet("font-size: 16px; font-weight: bold; color: #2c3e50; padding-bottom: 10px;");
+    layout->addWidget(titulo);
+
+
+    //aqui layout en forma de grilla para los stickers
     QGridLayout*grid=new QGridLayout;
+    grid->setSpacing(10);
     layout->addLayout(grid);
 
     //aqui se leen los stickers favoritos del archivo del usuario
-    QString ruta=QDir::currentPath()+"/stickers_usuarios/stickers_"+UsuarioActivo.getUsuario()+".txt";
+    QString ruta=obtenerRutaFavoritos(UsuarioActivo.getUsuario());
     QFile archivo(ruta);
     QStringList lista;
 
@@ -1647,13 +1729,21 @@ void MainWindow::mostrarPanelStickersFavoritos()
 
     }
 
-    QDir carpeta(QDir::currentPath()+"/stickers_disponibles");
+    QDir carpeta(obtenerRutaStickersDisponibles());
     int fila=0,columna=0;
     for(const QString &nombre:lista)
     {
 
-        QString rutaSticker=carpeta.filePath(nombre);
-        if(!QFile::exists(rutaSticker))continue;
+        QString nombreNormal=nombre.trimmed();
+        if(nombreNormal.isEmpty())continue;
+        QString rutaSticker=carpeta.filePath(nombreNormal);
+        if(!QFile::exists(rutaSticker))
+        {
+
+            qDebug() << "No se encontroooooooooooooooooooooooooo:" << rutaSticker;
+            continue;
+
+        }
 
         ClickableLabel*img=new ClickableLabel;
         img->setPixmap(QPixmap(rutaSticker).scaled(80,80,Qt::KeepAspectRatio,Qt::SmoothTransformation));
@@ -1679,7 +1769,9 @@ void MainWindow::mostrarPanelStickersFavoritos()
 
     }
     panelStickers->adjustSize();
-    panelStickers->move(QCursor::pos());//aqui aparece donde esta el cursor
+    QPoint posicion=QCursor::pos();//aqui aparece donde esta el cursor
+    panelStickers->move(posicion.x(),posicion.y()-panelStickers->height());
+
     panelStickers->show();
 
 }
@@ -1687,14 +1779,88 @@ void MainWindow::mostrarPanelStickersFavoritos()
 void MainWindow::EnviarStickers(const QString &nombreSticker)
 {
 
-    //aqui se crea la etiqueta con la imagen del sticker
-    QLabel*stickerLabel=new QLabel;
-    QString ruta=QDir::currentPath()+"/stickers_disponibles/"+nombreSticker;
-    stickerLabel->setPixmap(QPixmap(ruta).scaled(100,100,Qt::KeepAspectRatio,Qt::SmoothTransformation));
+    if (chatActivo.isEmpty()) return;
 
+    // Mostrar visualmente el sticker en el chat
+    QLabel *stickerLabel = new QLabel;
+    QString ruta = obtenerRutaStickersDisponibles() + "/" + nombreSticker;
+    stickerLabel->setPixmap(QPixmap(ruta).scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     stickerLabel->setStyleSheet("background-color: transparent; border-radius: 10px;");
     stickerLabel->setAlignment(Qt::AlignRight);
-
     layoutMensajes->addWidget(stickerLabel);
+
+    // Guardar en archivo
+    QString rutaArchivo = ObtenerRutaConversacion(UsuarioActivo.getUsuario(), chatActivo);
+    QFile archivo(rutaArchivo);
+    if (archivo.open(QIODevice::Append | QIODevice::Text)) {
+        QTextStream out(&archivo);
+        QDateTime ahora = QDateTime::currentDateTime();
+        QString fecha = ahora.toString("yyyy-MM-dd");
+        QString hora = ahora.toString("HH:mm");
+
+        out << "[" << fecha << " " << hora << "] "
+            << UsuarioActivo.getUsuario() << " (sticker): "
+            << nombreSticker << "\n";
+
+        archivo.close();
+    }
+
+    // Registrar en pila de deshacer
+    Mensaje<QString> mensaje;
+    mensaje.setEmisor(UsuarioActivo.getUsuario());
+    mensaje.setReceptor(chatActivo);
+    mensaje.setContenido(nombreSticker);
+    mensaje.setTipo(Mensaje<QString>::STICKER);
+    mensaje.setFecha(QDateTime::currentDateTime());
+
+    pilaDeshacer.insertar(mensaje);
+
+}
+
+QString MainWindow::ObtenerRutaConversacion(const QString &usuario1, const QString &usuario2) const
+{
+
+    QDir dir(QCoreApplication::applicationDirPath());
+    dir.cdUp(); //aqui subimos al directorio raiz del proyecto
+
+    QDir carpeta(dir.filePath("conversaciones"));
+    if (!carpeta.exists())
+    {
+
+        carpeta.mkpath(".");  //aqui crea carpeta si no existe
+
+    }
+
+    QString u1=usuario1.toLower();
+    QString u2=usuario2.toLower();
+    if (u1>u2) std::swap(u1, u2);
+
+    QString nombreArchivo=u1+"_"+u2+".txt";
+    return carpeta.filePath(nombreArchivo);
+
+}
+
+QString MainWindow::obtenerRutaStickersDisponibles() const
+{
+
+    QDir dir(QCoreApplication::applicationDirPath());
+    dir.cdUp();
+    return dir.filePath("stickers_disponibles");
+
+}
+
+QString MainWindow::obtenerRutaFavoritos(const QString &usuario) const
+{
+
+    QDir dir(QCoreApplication::applicationDirPath());
+    dir.cdUp();
+    QDir carpeta(dir.filePath("stickers_usuarios"));
+    if (!carpeta.exists())
+    {
+
+        carpeta.mkpath(".");
+
+    }
+    return carpeta.filePath("stickers_" + usuario + ".txt");
 
 }

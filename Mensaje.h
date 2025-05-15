@@ -22,6 +22,10 @@ public:
     Tipo getTipo()const {return tipo;}
     QDateTime getFecha()const{return fecha;}
 
+    void setEmisor(const QString &e){emisor=e;}
+    void setReceptor(const QString &r){receptor=r;}
+    void setTipo(Tipo t){tipo=t;}
+    void setFecha(const QDateTime &f){fecha=f;}
     void setContenido(const T &nuevo){contenido=nuevo;}
 
     QString tipoComoTexto() const {
