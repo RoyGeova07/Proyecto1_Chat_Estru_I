@@ -61,6 +61,7 @@ public:
     //aqui crea pila para deshacer mensajes enviados
     PilaDeshacer<Mensaje<QString>> pilaDeshacer;
     PilaDeshacer<Mensaje<QString>> pilaRehacer;
+    QMap<QString,QString> borradoresMensajes;
 
 
 private slots:
@@ -77,6 +78,8 @@ private slots:
     QString obtenerRutaFavoritos(const QString &usuario) const;
     QString obtenerRutaStickersDisponibles() const;
     QString ObtenerRutaConversacion(const QString &usuario1, const QString &usuario2) const;
+    void GuardarBorradores();
+    void CargarBorradores();
 
 private:
     Usuario UsuarioActivo;

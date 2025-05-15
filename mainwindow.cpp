@@ -105,6 +105,7 @@ MainWindow::MainWindow(Usuario usuario,QWidget *parent)
 
 
     CargarEstadoMensajes();
+    CargarBorradores();
 
     // ======= aqui se crea el panel derecho ======
     paneles=new QStackedWidget(this);
@@ -258,6 +259,7 @@ void MainWindow::mostrarPanelNotificaciones()
 void MainWindow::cerrarSesion()
 {
 
+    GuardarBorradores();
     GuardarEstadoMensajes();
     MarcarUsuarioComoDesconectado(UsuarioActivo.getUsuario());
     Inicio *i=new Inicio();
@@ -1022,6 +1024,15 @@ QWidget *MainWindow::crearPanelMensajes()
 
         this->chatActivo = usuamigo;
 
+        // Guardar mensaje actual antes de cambiar de contacto
+        if (!chatActivo.isEmpty()) {
+            QList<QLineEdit*> campos = panelchat->findChildren<QLineEdit*>();
+            if (!campos.isEmpty()) {
+                QLineEdit* campoActual = campos.last();
+                borradoresMensajes[chatActivo] = campoActual->text();
+            }
+        }
+
         // Reset de cola y etiqueta visual
         if (this->colasNoLeidos.contains(usuamigo))
         {
@@ -1036,7 +1047,7 @@ QWidget *MainWindow::crearPanelMensajes()
 
         }
 
-        // Se considera como leídos todos los mensajes actuales
+        //aqui se considera como leidos todos los mensajes actuales
         this->ultimosMensajesContados[usuamigo]=CargarMensajeDesdeArchivo(UsuarioActivo.getUsuario(), usuamigo).size();
         this->btnMensajes->setText("Mensajes");
 
@@ -1053,7 +1064,8 @@ QWidget *MainWindow::crearPanelMensajes()
 
             }
         }
-        //aqui se limpia la vista anterior
+
+        //aqui se limpia el chat anterior
         QLayoutItem *w;
         while((w=chatlayout->takeAt(0))!=nullptr)
         {
@@ -1083,7 +1095,9 @@ QWidget *MainWindow::crearPanelMensajes()
         scrollArea->setWidget(contenedorMensajes);
         chatlayout->addWidget(scrollArea);
 
+        //aqui se crea el campo de mensaje
         QLineEdit *entradaMensaje = new QLineEdit;
+        entradaMensaje->setText(borradoresMensajes.value(usuamigo,""));
         entradaMensaje->setPlaceholderText("Escribe un mensaje...");
         entradaMensaje->setStyleSheet("color: black; font-size: 14px; padding: 6px;");
 
@@ -1862,5 +1876,60 @@ QString MainWindow::obtenerRutaFavoritos(const QString &usuario) const
 
     }
     return carpeta.filePath("stickers_" + usuario + ".txt");
+
+}
+
+void MainWindow::GuardarBorradores()
+{
+
+    QDir dir(QCoreApplication::applicationDirPath());
+    dir.cdUp();
+    QDir carpeta(dir.filePath("borradores"));
+    if(!carpeta.exists()) carpeta.mkpath(".");
+
+    QString ruta=carpeta.filePath("borradores_"+UsuarioActivo.getUsuario()+".txt");
+    QFile archivo(ruta);
+
+    if(archivo.open(QIODevice::WriteOnly|QIODevice::Text))
+    {
+
+        QTextStream out(&archivo);
+        for(auto borrador=borradoresMensajes.begin();borrador!=borradoresMensajes.end();++borrador)
+        {
+
+            out<<borrador.key()<<"|"<<borrador.value().replace("\n","\\n")<<"\n";
+
+        }
+        archivo.close();
+
+    }
+
+}
+
+void MainWindow::CargarBorradores()
+{
+
+    QDir dir(QCoreApplication::applicationDirPath());
+    dir.cdUp();
+    QFile archivo(dir.filePath("borradores/borradores_"+UsuarioActivo.getUsuario()+".txt"));
+    if(archivo.open(QIODevice::ReadOnly|QIODevice::Text))
+    {
+
+        QTextStream in(&archivo);
+        while(!in.atEnd())
+        {
+            QString linea=in.readLine();
+            QStringList partes=linea.split("|");
+            if(partes.size()==2)
+            {
+
+                borradoresMensajes[partes[0]]=partes[1].replace("\\n","\n");
+
+            }
+
+        }
+        archivo.close();
+
+    }
 
 }
