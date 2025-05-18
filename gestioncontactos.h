@@ -71,6 +71,7 @@ public:
     QString ObtenerEstadoExacto(QString remitente, QString destinatario, int posicion)const;
     void CargarDatos();
     bool TieneSolicitudRecibida(const QString &yo,const QString &otro);
+    bool ExisteContacto(const QString& usuario1, const QString& usuario2) const;
 
 
 private:

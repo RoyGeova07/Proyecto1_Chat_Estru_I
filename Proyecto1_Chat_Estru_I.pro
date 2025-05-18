@@ -24,7 +24,6 @@ SOURCES += \
 
 HEADERS += \
     ClickableLabel.h \
-    EstadoUsuario.h \
     Mensaje.h \
     colanoleidos.h \
     funciones_usuario.h \

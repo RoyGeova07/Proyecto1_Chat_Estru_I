@@ -18,6 +18,7 @@
 #include"piladeshacer.h"
 #include"Mensaje.h"
 #include"colanoleidos.h"
+#include<QComboBox>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -46,7 +47,16 @@ public:
 
     };
 
-    void CrearBotonesAccionMensajes(QVBoxLayout *layoutMensajes,const QVector<InfoMensaje> &mensajes,const QString &usuamigo,std::function<void()> actualizarMensajes,PilaDeshacer<Mensaje<QString>>&pilaDeshacer);
+    struct InfoHistorial
+    {
+
+        QString contacto;
+        QString fecha;
+        QString hora;
+        QString contenido;
+        QString emisor;
+
+    };
 
     //aqui mapa para las colas de mensajes no leidos por contacto
     QMap<QString,ColaNoLeidos<Mensaje<QString>>> colasNoLeidos;
@@ -63,12 +73,15 @@ public:
     PilaDeshacer<Mensaje<QString>> pilaRehacer;
     QMap<QString,QString> borradoresMensajes;
 
+    QTimer *timerChatActivo; // Temporizador para actualizar mensajes en tiempo real
+    QMap<QString, QStringList> ultimoMensajeMostrado;
 
 private slots:
     void mostrarPanelBuscar();
     void mostrarPanelMensajes();
     void mostrarPanelStickers();
     void mostrarPanelNotificaciones();
+    void mostrarPanelHistorial();
     void cerrarSesion();
     void ActualizarContadorNotificaciones();
     void GuardarEstadoMensajes();
@@ -76,7 +89,6 @@ private slots:
     void mostrarPanelStickersFavoritos();
     void EnviarStickers(const QString &nombreSticker);
     QString obtenerRutaFavoritos(const QString &usuario) const;
-    QString obtenerRutaStickersDisponibles() const;
     QString ObtenerRutaConversacion(const QString &usuario1, const QString &usuario2) const;
     void GuardarBorradores();
     void CargarBorradores();
@@ -89,8 +101,11 @@ private:
     QWidget *crearPanelMensajes();
     QWidget *crearPanelStickers();
     QWidget *crearPanelNotificaciones();
+    QWidget *crearPanelHistorial();
     QWidget *panelStickers=nullptr;
     QVBoxLayout *layoutMensajes=nullptr;
+
+    QString obtenerRutaStickersDisponibles() const;
 
     // Elementos principales
     QStackedWidget *paneles;
@@ -99,7 +114,16 @@ private:
     QPushButton *btnVentanaStickers;
     QPushButton *btnNotificaciones;
     QPushButton *btnCerrarSesion;
+    QPushButton *btnHistorial;
+    QLineEdit *buscadorHistorial;
+    QComboBox *comboOrdenHistorial;
+    QListWidget *listaHistorialMensajes;
     QListWidgetItem* itemContactoSeleccionado = nullptr;
+    std::function<void()> actualizarMensajesActual;
+    QVector<InfoHistorial> CargarMensajesHistorial();
+    void MostrarMensajesEnLista(const QVector<InfoHistorial> &mensajes);
+    QVector<InfoHistorial> historialCompleto;
+    void OrdenarHistorial(int indice);
 
 };
 #endif // MAINWINDOW_H

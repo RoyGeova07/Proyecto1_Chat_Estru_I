@@ -14,6 +14,8 @@ public:
     QString getTipo()const;
     QString getMensaje()const;
     QString getEstado()const;
+    QString getFecha() const;
+    QString getHora() const;
 
     void setEstado(const QString &nuevoEstado);
 
@@ -26,6 +28,8 @@ private:
     QString tipo;     // solicitud o respuesta
     QString mensaje;
     QString estado;   // nueva o vista
+    QString fecha;
+    QString hora;
 
 };
 

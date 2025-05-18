@@ -22,6 +22,11 @@ void MarcarUsuarioComoDesconectado(const QString &usuario);
 bool Estaconectado(const QString &usuario);
 void LimpiarUsuariosOnlineSiEstaVacio();
 void CrearCarpetaConversacion(const QString &u1,const QString &u2);
+void EliminarArchivoConversacion(const QString& usuario1,const QString& usuario2);
+void EliminarSolicitud(const QString& usuario1, const QString& usuario2);
+
+void ObtenerUltimaLineaArchivo(const QString& ruta);
+
 
 template<typename T>
 void GuardarMensajeEnArchivo(const Mensaje<T> &m,const QString &u1,const QString &u2)

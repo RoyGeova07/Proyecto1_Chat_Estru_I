@@ -265,6 +265,22 @@ QStringList CargarMensajeDesdeArchivo(const QString &u1, const QString &u2)
 
     QString rutaArchivo=carpeta.filePath(nombre1 + "_" + nombre2 + ".txt");
 
+    //aqui se crea el archivo si no existe
+    if(!QFile::exists(rutaArchivo))
+    {
+
+        QFile nuevo(rutaArchivo);
+        if(nuevo.open(QIODevice::WriteOnly))
+        {
+
+            nuevo.close();
+
+        }
+        return{};//no hay mensajes aun
+
+    }
+
+    //aqui se lee los archivos si no exist
     QStringList mensajes;
     QFile archivo(rutaArchivo);
     if(archivo.open(QIODevice::ReadOnly|QIODevice::Text))
@@ -283,5 +299,61 @@ QStringList CargarMensajeDesdeArchivo(const QString &u1, const QString &u2)
     }
     return mensajes;
 
+}
+
+void EliminarArchivoConversacion(const QString& usuario1,const QString& usuario2)
+{
+
+    QDir dir(QCoreApplication::applicationDirPath());
+    dir.cdUp();
+    dir.cd("conversaciones");
+
+    QString nombre1=usuario1.toLower();
+    QString nombre2=usuario2.toLower();
+    if(nombre1>nombre2)std::swap(nombre1,nombre2);
+
+    QString archivo=nombre1+"_"+nombre2+".txt";
+
+    if(dir.exists(archivo))
+    {
+
+        dir.remove(archivo);
+
+    }
+
+}
+
+void EliminarSolicitud(const QString& usuario1, const QString& usuario2)
+{
+    QFile archivo(RutaSolicitudes());
+    if (!archivo.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+
+    QStringList lineas;
+    QTextStream in(&archivo);
+
+    while (!in.atEnd()) {
+        QString linea = in.readLine();
+        QStringList partes = linea.split("->");
+        if (partes.size() == 2) {
+            QString remitente = partes[0].trimmed();
+            QString destinatario = partes[1].trimmed();
+
+            if (!((remitente == usuario1 && destinatario == usuario2) ||
+                  (remitente == usuario2 && destinatario == usuario1))) {
+                lineas << linea;
+            }
+        }
+    }
+
+    archivo.close();
+
+    // Guardar nuevamente el archivo sin la solicitud eliminada
+    if (archivo.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+        QTextStream out(&archivo);
+        for (const QString& linea : lineas) {
+            out << linea << "\n";
+        }
+        archivo.close();
+    }
 }
 

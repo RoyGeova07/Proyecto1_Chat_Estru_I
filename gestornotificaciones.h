@@ -18,12 +18,14 @@ public:
     void agregarnotificacion(const Notificacion &nueva);
     void MarcarComoVistaBuzon(const QString &usuario);
 
+    void eliminarTodasLasNotificaciones(const QString& usuario);
+    static void EliminarNotificacionesEntre(const QString &usuario1, const QString &usuario2);
 
 private:
 
     QString ObtenerRutaArchivo(const QString &usuario);
 
-    inline QString RutaNotificaciones()
+    static QString RutaNotificaciones()
     {
 
         QDir dir(QCoreApplication::applicationDirPath());

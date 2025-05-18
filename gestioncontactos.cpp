@@ -445,6 +445,18 @@ bool GestionContactos::TieneSolicitudRecibida(const QString &yo, const QString &
 
 }
 
+bool GestionContactos::ExisteContacto(const QString& usuario1, const QString& usuario2) const {
+    NodoContacto* actual = contactos;
+    while (actual) {
+        if ((actual->usuario1 == usuario1 && actual->usuario2 == usuario2) ||
+            (actual->usuario1 == usuario2 && actual->usuario2 == usuario1)) {
+            return true;
+        }
+        actual = actual->siguiente;
+    }
+    return false;
+}
+
 void GestionContactos::liberarContactos()
 {
 

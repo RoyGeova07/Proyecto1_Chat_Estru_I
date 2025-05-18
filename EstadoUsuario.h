@@ -1,4 +1,0 @@
-#ifndef ESTADOUSUARIO_H
-#define ESTADOUSUARIO_H
-
-#endif // ESTADOUSUARIO_H

@@ -138,3 +138,41 @@ void GestorNotificaciones::MarcarComoVistaBuzon(const QString &usuario)
     guardar(usuario,lista);
 
 }
+
+void GestorNotificaciones::eliminarTodasLasNotificaciones(const QString &usuario)
+{
+
+    QFile archivo(ObtenerRutaArchivo(usuario));
+    if (archivo.exists())
+    {
+
+        archivo.remove();
+
+    }
+
+}
+
+void GestorNotificaciones::EliminarNotificacionesEntre(const QString &usuario1, const QString &usuario2) {
+    QString ruta = RutaNotificaciones();
+    QFile archivo(ruta);
+    if (!archivo.exists()) return;
+
+    QStringList lineasFiltradas;
+    if (archivo.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream in(&archivo);
+        while (!in.atEnd()) {
+            QString linea = in.readLine();
+            if (!(linea.contains(usuario1) && linea.contains(usuario2))) {
+                lineasFiltradas << linea;
+            }
+        }
+        archivo.close();
+    }
+
+    if (archivo.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+        QTextStream out(&archivo);
+        for (const QString &l : lineasFiltradas) out << l << "\n";
+        archivo.close();
+    }
+}
+
