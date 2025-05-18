@@ -325,35 +325,36 @@ void EliminarArchivoConversacion(const QString& usuario1,const QString& usuario2
 
 void EliminarSolicitud(const QString& usuario1, const QString& usuario2)
 {
-    QFile archivo(RutaSolicitudes());
-    if (!archivo.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+    QString ruta = RutaSolicitudes();
+    QFile archivo(ruta);
 
-    QStringList lineas;
-    QTextStream in(&archivo);
+    if (!archivo.exists()) return;
 
-    while (!in.atEnd()) {
-        QString linea = in.readLine();
-        QStringList partes = linea.split("->");
-        if (partes.size() == 2) {
-            QString remitente = partes[0].trimmed();
-            QString destinatario = partes[1].trimmed();
+    if (archivo.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QStringList lineasConservadas;
+        QTextStream in(&archivo);
 
-            if (!((remitente == usuario1 && destinatario == usuario2) ||
-                  (remitente == usuario2 && destinatario == usuario1))) {
-                lineas << linea;
+        while (!in.atEnd()) {
+            QString linea = in.readLine().trimmed();
+            QStringList partes = linea.split("|");
+            if (partes.size() == 3) {
+                QString remitente = partes[0];
+                QString destinatario = partes[1];
+                // si NO es entre estos dos usuarios, se conserva
+                if (!((remitente == usuario1 && destinatario == usuario2) ||
+                      (remitente == usuario2 && destinatario == usuario1))) {
+                    lineasConservadas << linea;
+                }
             }
         }
-    }
-
-    archivo.close();
-
-    // Guardar nuevamente el archivo sin la solicitud eliminada
-    if (archivo.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
-        QTextStream out(&archivo);
-        for (const QString& linea : lineas) {
-            out << linea << "\n";
-        }
         archivo.close();
+
+        // sobrescribimos el archivo con las líneas filtradas
+        if (archivo.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+            QTextStream out(&archivo);
+            for (const QString& linea : lineasConservadas)
+                out << linea << "\n";
+            archivo.close();
+        }
     }
 }
-

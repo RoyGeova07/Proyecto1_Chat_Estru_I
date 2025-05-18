@@ -153,26 +153,42 @@ void GestorNotificaciones::eliminarTodasLasNotificaciones(const QString &usuario
 }
 
 void GestorNotificaciones::EliminarNotificacionesEntre(const QString &usuario1, const QString &usuario2) {
-    QString ruta = RutaNotificaciones();
-    QFile archivo(ruta);
-    if (!archivo.exists()) return;
+    QString rutaBase = RutaNotificaciones();
 
-    QStringList lineasFiltradas;
-    if (archivo.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QTextStream in(&archivo);
-        while (!in.atEnd()) {
-            QString linea = in.readLine();
-            if (!(linea.contains(usuario1) && linea.contains(usuario2))) {
-                lineasFiltradas << linea;
+    QStringList archivos;
+    archivos << QString("notificaciones_%1.txt").arg(usuario1)
+             << QString("notificaciones_%1.txt").arg(usuario2);
+
+    for (const QString &archivoNombre : archivos) {
+        QFile archivo(QDir(rutaBase).filePath(archivoNombre));
+        if (!archivo.exists()) continue;
+
+        if (archivo.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QStringList lineasNuevas;
+            QTextStream in(&archivo);
+            while (!in.atEnd()) {
+                QString linea = in.readLine();
+                QStringList partes = linea.split("|");
+                if (partes.size() >= 5) {
+                    QString remitente = partes[0];
+                    QString receptor = partes[1];
+                    QString tipo = partes[2];
+
+                    // Solo conserva la línea si NO involucra a ambos usuarios
+                    if (!((remitente == usuario1 && receptor == usuario2) ||
+                          (remitente == usuario2 && receptor == usuario1))) {
+                        lineasNuevas << linea;
+                    }
+                }
+            }
+            archivo.close();
+
+            if (archivo.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+                QTextStream out(&archivo);
+                for (const QString &l : lineasNuevas)
+                    out << l << "\n";
+                archivo.close();
             }
         }
-        archivo.close();
-    }
-
-    if (archivo.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
-        QTextStream out(&archivo);
-        for (const QString &l : lineasFiltradas) out << l << "\n";
-        archivo.close();
     }
 }
-

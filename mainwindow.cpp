@@ -71,10 +71,7 @@ MainWindow::MainWindow(Usuario usuario,QWidget *parent)
     lblNombre->setAlignment(Qt::AlignCenter);
     lblNombre->setStyleSheet("color: white; font-weight: bold; font-size: 18px");
 
-    QString rutaImagenes="C:/Users/royum/OneDrive/Documentos/Proyecto1_Chat_Estru_I/Imagenes/";
-
     //botones para barra lateral
-
     btnHistorial = new QPushButton(QIcon(rutaImagenes+"historial.png")," Historial",this);
     btnBuscar = new QPushButton(QIcon(rutaImagenes+"buscar.png")," Buscar",this);
     btnMensajes = new QPushButton(QIcon(rutaImagenes+"mensajes.png")," Mensajes",this);
@@ -928,7 +925,7 @@ QWidget *MainWindow::crearPanelMensajes()
                 avatarLabel->setPixmap(avatar.scaled(40,40,Qt::KeepAspectRatio,Qt::SmoothTransformation));
                 avatarLabel->setFixedSize(40,40);
 
-                QLabel *puntoEstado=new QLabel;
+                QLabel *puntoEstado=new QLabel;//PARA SABER SI ESTA ONLINE O OFFLINE EL USUARIO
                 puntoEstado->setFixedSize(12,12);
                 puntoEstado->setStyleSheet("border-radius: 6px;");
                 bool conectado=Estaconectado(u.getUsuario());
@@ -937,6 +934,124 @@ QWidget *MainWindow::crearPanelMensajes()
                 //aqui nombre completo
                 QLabel *nombreLabel=new QLabel(u.getNombre());
                 nombreLabel->setStyleSheet("font-size: 14px; color: #2c3e50; font-weight: bold;");
+
+                //AQUI EL BOTON DE ELIMINAR CONTACTO
+                QPushButton* btnEliminar=new QPushButton(this);
+                btnEliminar->setIcon(QIcon(rutaImagenes+"delete.png"));
+                btnEliminar->setFixedSize(24,24);
+                btnEliminar->setIconSize(QSize(20,20));
+                btnEliminar->setToolTip("Eliminar contacto");
+                btnEliminar->setCursor(Qt::PointingHandCursor);
+                btnEliminar->setStyleSheet(
+                    "QPushButton { background-color: transparent; border: none; }"
+                    "QPushButton:hover { background-color: #e74c3c; border-radius: 6px; }"
+                    );
+
+                //aqui conexion al eliminar
+                connect(btnEliminar, &QPushButton::clicked, this, [=]()
+                {
+
+                    QString nombreCompleto=u.getNombre();
+                    QString usuarioEliminar=u.getUsuario();
+
+                    QMessageBox::StandardButton respuesta=QMessageBox::question(this,"Confirmar eliminacion","¿Estas seguro de eliminar a \""+nombreCompleto+"\"?\nSe perdera todo el historial del chat.",QMessageBox::Yes|QMessageBox::No);
+
+                    if(respuesta == QMessageBox::Yes)
+                    {
+
+                        // Paso 1: Eliminar del archivo contactos
+                        gestionContactos.EliminarContacto(UsuarioActivo.getUsuario(), usuarioEliminar);
+                        GestorNotificaciones::EliminarNotificacionesEntre(UsuarioActivo.getUsuario(),usuarioEliminar);
+                        EliminarSolicitud(UsuarioActivo.getUsuario(),usuarioEliminar);
+
+
+                        // Paso 2: Vaciar archivo de conversacion
+                        auto obtenerRutaArchivo=[](const QString &usuario1, const QString &usuario2)
+                        {
+
+                            QDir dir(QCoreApplication::applicationDirPath());
+                            dir.cdUp();
+                            QString nombre1=usuario1.toLower();
+                            QString nombre2=usuario2.toLower();
+                            if (nombre1>nombre2)std::swap(nombre1,nombre2);
+                            return dir.filePath("conversaciones/"+nombre1+"_"+nombre2+".txt");
+
+                        };
+
+                        QString rutaConversacion=obtenerRutaArchivo(UsuarioActivo.getUsuario(), usuarioEliminar);
+                        QFile archivo(rutaConversacion);
+                        if(archivo.open(QIODevice::WriteOnly|QIODevice::Truncate|QIODevice::Text))
+                        {
+
+                            archivo.close(); // Vaciar el contenido
+
+                        }
+
+                        // Paso 3: Eliminar solicitudes.txt entre ambos
+                        QString rutaSolicitudes=QCoreApplication::applicationDirPath() + "/../solicitudes.txt";
+                        QFile archivoSolicitudes(rutaSolicitudes);
+                        if(archivoSolicitudes.open(QIODevice::ReadOnly | QIODevice::Text))
+                        {
+
+                            QStringList lineasNuevas;
+                            QTextStream in(&archivoSolicitudes);
+                            while (!in.atEnd()) {
+                                QString linea = in.readLine();
+                                QStringList partes = linea.split("|");
+                                if (partes.size() == 3) {
+                                    QString remitente = partes[0];
+                                    QString destinatario = partes[1];
+                                    if (!((remitente == UsuarioActivo.getUsuario() && destinatario == usuarioEliminar) ||
+                                          (remitente == usuarioEliminar && destinatario == UsuarioActivo.getUsuario()))) {
+                                        lineasNuevas << linea;
+                                    }
+                                }
+                            }
+                            archivoSolicitudes.close();
+                            if (archivoSolicitudes.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+                                QTextStream out(&archivoSolicitudes);
+                                for (const QString &l : lineasNuevas) out << l << "\n";
+                                archivoSolicitudes.close();
+                            }
+                        }
+
+                        // Paso 4: Eliminar notificaciones.txt relacionadas
+                        QString rutaNotificaciones = QCoreApplication::applicationDirPath() + "/../notificaciones.txt";
+                        QFile archivoNotificaciones(rutaNotificaciones);
+                        if (archivoNotificaciones.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                            QStringList lineasNuevas;
+                            QTextStream in(&archivoNotificaciones);
+                            while (!in.atEnd()) {
+                                QString linea = in.readLine();
+                                QStringList partes = linea.split("|");
+                                if (partes.size() == 5) {
+                                    QString destino = partes[0];
+                                    QString relacionado = partes[1];
+                                    // Eliminar si involucra a ambos usuarios en cualquier orden
+                                    if (!((destino == UsuarioActivo.getUsuario() && relacionado == usuarioEliminar) ||
+                                          (destino == usuarioEliminar && relacionado == UsuarioActivo.getUsuario()))) {
+                                        lineasNuevas << linea;
+                                    }
+                                }
+                            }
+                            archivoNotificaciones.close();
+                            if (archivoNotificaciones.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+                                QTextStream out(&archivoNotificaciones);
+                                for (const QString &l : lineasNuevas) out << l << "\n";
+                                archivoNotificaciones.close();
+                            }
+                        }
+
+                        // Paso 5: Recargar interfaz de mensajes
+                        QWidget *nuevo = crearPanelMensajes();
+                        int index = paneles->indexOf(paneles->currentWidget());
+                        QWidget *actual = paneles->currentWidget();
+                        paneles->removeWidget(actual);
+                        actual->deleteLater();
+                        paneles->insertWidget(index, nuevo);
+                        paneles->setCurrentIndex(index);
+                    }
+                });
 
                 // layout horizontal para punto + nombre
                 QHBoxLayout *nombreLayout = new QHBoxLayout;
@@ -950,6 +1065,7 @@ QWidget *MainWindow::crearPanelMensajes()
 
                 layout->addWidget(avatarLabel);
                 layout->addWidget(nombreWidget); // agregas el widget con el nombre y el punto
+                layout->addWidget(btnEliminar);
                 layout->addStretch();
 
 

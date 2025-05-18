@@ -107,6 +107,8 @@ private:
 
     QString obtenerRutaStickersDisponibles() const;
 
+    QString rutaImagenes="C:/Users/royum/OneDrive/Documentos/Proyecto1_Chat_Estru_I/Imagenes/";
+
     // Elementos principales
     QStackedWidget *paneles;
     QPushButton *btnBuscar;
