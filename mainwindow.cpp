@@ -71,14 +71,17 @@ MainWindow::MainWindow(Usuario usuario,QWidget *parent)
     lblNombre->setAlignment(Qt::AlignCenter);
     lblNombre->setStyleSheet("color: white; font-weight: bold; font-size: 18px");
 
+    QString rutaImagenes="C:/Users/royum/OneDrive/Documentos/Proyecto1_Chat_Estru_I/Imagenes/";
+
     //botones para barra lateral
-    btnHistorial=new QPushButton(QIcon(":/icons/search.png"), " Historial",this);
-    btnBuscar=new QPushButton(QIcon(":/icons/search.png")," Buscar",this);
-    btnMensajes=new QPushButton(QIcon(":/icons/messages.png")," Mensajes",this);
-    btnVentanaStickers=new QPushButton(QIcon(":/icons/Stickers.png")," Stickers",this);
-    btnNotificaciones=new QPushButton(QIcon(":/icons/notification.png"),"",this);
+
+    btnHistorial = new QPushButton(QIcon(rutaImagenes+"historial.png")," Historial",this);
+    btnBuscar = new QPushButton(QIcon(rutaImagenes+"buscar.png")," Buscar",this);
+    btnMensajes = new QPushButton(QIcon(rutaImagenes+"mensajes.png")," Mensajes",this);
+    btnVentanaStickers = new QPushButton(QIcon(rutaImagenes+"stickers.png")," Stickers",this);
+    btnNotificaciones = new QPushButton(QIcon(rutaImagenes+"buzon.png")," Buzón",this);
     ActualizarContadorNotificaciones();
-    btnCerrarSesion=new QPushButton(QIcon(":/icons/cerrar.png")," Cerrar Sesion",this);
+    btnCerrarSesion = new QPushButton(QIcon(rutaImagenes+"cerrar.png"),"Cerrar Sesión",this);
 
     QString EstiloBoton="QPushButton {background-color: transparent; color: white;  font-size: 16px; padding: 12px; text-align: left;}"
                           "QPushButton:hover {background-color: #40739e; }";
