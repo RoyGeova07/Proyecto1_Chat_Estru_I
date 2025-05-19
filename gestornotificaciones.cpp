@@ -76,8 +76,7 @@ void GestorNotificaciones::agregarnotificacion(const Notificacion &nueva)
     {
         for (int i = actuales.size() - 1; i >= 0; --i)
         {
-            if (actuales[i].getTipo() == "solicitud" &&
-                actuales[i].getRelacionado() == nueva.getRelacionado())
+            if (actuales[i].getTipo() == "solicitud"&&actuales[i].getRelacionado() == nueva.getRelacionado())
             {
                 QString estado = actuales[i].getEstado();
 

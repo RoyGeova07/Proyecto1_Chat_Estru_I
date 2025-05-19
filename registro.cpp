@@ -91,6 +91,24 @@ void Registro::ValidarFormulario()
         ui->txtUsuario->setToolTip("El nombre de usuario no puede estar vacio.");
         ui->txtUsuario->setStyleSheet("background-color: lightcoral;");
 
+    }else if(UsuarioIngresado.contains(" ")){
+
+        valido = false;
+        ui->txtUsuario->setToolTip("El nombre de usuario no puede contener espacios.");
+        ui->txtUsuario->setStyleSheet("background-color: lightcoral;");
+
+    }else if(UsuarioIngresado.length()<3){
+
+        valido = false;
+        ui->txtUsuario->setToolTip("El nombre de usuario debe tener al menos 3 caracteres.");
+        ui->txtUsuario->setStyleSheet("background-color: lightcoral;");
+
+    }else if(UsuarioIngresado.compare(NombreCompleto,Qt::CaseInsensitive)==0){
+
+        valido = false;
+        ui->txtUsuario->setToolTip("El nombre de usuario no puede ser igual al nombre completo.");
+        ui->txtUsuario->setStyleSheet("background-color: lightcoral;");
+
     }else if(!UsuarioUnico){
 
         valido=false;
@@ -111,6 +129,12 @@ void Registro::ValidarFormulario()
         ui->txtNombreCompleto->setToolTip("El nombre completo no puede estar vacio");
         ui->txtNombreCompleto->setStyleSheet("background-color: lightcoral;");
 
+    }else if(NombreCompleto.contains('@')){
+
+        valido = false;
+        ui->txtNombreCompleto->setToolTip("El nombre completo no puede contener el caracter '@'.");
+        ui->txtNombreCompleto->setStyleSheet("background-color: lightcoral;");
+
     }else{
 
         ui->txtNombreCompleto->setToolTip("");
@@ -118,11 +142,13 @@ void Registro::ValidarFormulario()
 
     }
 
-    if(Correo.isEmpty()||!Correo.contains("@"))
+    QRegularExpression regexCorreo(R"(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)");
+
+    if(Correo.isEmpty()||!regexCorreo.match(Correo).hasMatch())
     {
 
         valido=false;
-        ui->lblcorreo->setToolTip("Debe generar un correo valido");
+        ui->lblcorreo->setToolTip("Debe generar un correo valido, por ejemplo: nombre@gmail.com");
         ui->lblcorreo->setStyleSheet("color: red;");
 
     }else{
@@ -225,7 +251,7 @@ void Registro::GenerarCorreo()
     {
 
         //si no hay nada que generar
-        QMessageBox::warning(this,"Advertencia","Debe ingresar su nombre comleto para generar el correo");
+        QMessageBox::warning(this,"Advertencia","Debe ingresar su nombre completo para generar el correo");
 
     }
 
@@ -250,7 +276,7 @@ void Registro::GenerarCorreo()
     //si pasa todo, asignar el correo
     ui->lblcorreo->setText(correo);
     ui->btnGenerarCorreo->setEnabled(false);//se bloqueara hasta que modifique de nuevo el nombre
-
+    ValidarFormulario();
 
 }
 

@@ -95,7 +95,7 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>330</y>
+     <y>340</y>
      <width>121</width>
      <height>16</height>
     </rect>
@@ -207,7 +207,7 @@
    <property name="geometry">
     <rect>
      <x>240</x>
-     <y>320</y>
+     <y>330</y>
      <width>101</width>
      <height>25</height>
     </rect>
@@ -231,7 +231,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Mostrar</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;	FOTO&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </widget>
   <widget class="QPushButton" name="btnCargarAvatar">
